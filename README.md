@@ -14,6 +14,7 @@ Solving a PDE with finite differences allow me to explore the optimality of mult
   * convergence speed
   * robustness to numerical errors
   * cognitive load of implementation
+even before performing some specific optimization tricks.
 
 
 ## Target problem
@@ -26,7 +27,7 @@ for which $\frac{sin(x)}{sin(1)}$ is the exact solution.
 
 
 # Technical details
-The stencils are obtained by solving a particular Vandermonde system, this is somewhat unconventional as finite difference stencils are obtained with [Fornberg algorithm](https://www.colorado.edu/amath/sites/default/files/attached-files/mathcomp_88_fd_formulas.pdf). Nevertheless the calculations are to be made in exact arithmetic as we want the stencils to be accurate as possible and the Vandermonde matrix is ill-conditioned. Since the coefficient are integer, rational arithmetic is exact.
+The stencils are obtained by solving a particular Vandermonde system, this is somewhat unconventional as finite difference stencils are obtained with [Fornberg algorithm](https://www.colorado.edu/amath/sites/default/files/attached-files/mathcomp_88_fd_formulas.pdf). Nevertheless the calculations are to be made in exact arithmetic as we want the stencils to be accurate as possible as the Vandermonde matrix is ill-conditioned. Since the coefficients are integer, rational arithmetic is exact.
 
 
 ## A good rational type
