@@ -2,9 +2,7 @@
 #define __STENCIL_H__
 
 
-#include <cmath>
 #include <vector>
-#include <concepts>
 #include <eigen3/Eigen/Dense>
 
 
@@ -13,10 +11,16 @@
 #define EIGEN_MATRIX(T) Eigen::Matrix<T, Eigen::Dynamic, 2>
 
 
-auto factorial(std::integral auto n) {
-	// from the cppreference:
-	//   if `num` is a natural number, `std::tgamma(num)` is the factorial of `num-1`
-	return std::tgamma(n+1);
+template <typename T>
+T factorial(T n) {
+	T acc = 1;
+
+	while (n > 1) {
+		acc *= n;
+		--n;
+	}
+
+	return acc;
 }
 
 
@@ -31,7 +35,7 @@ EIGEN_VECTOR(T) compute_stencil_vandermonde(T center,
 
 	// we don't have necessarily access to std::pow, so we build our
 	// own implementation for computing:
-	//   A(i,j) = nodes[i]^j
+	//   A(i,j) = nodes[j]^i
 	for (int i = 0; i < n; ++i) {
 		for (int j = 0; j < n; ++j) {
 			if (i == 0) {
@@ -61,7 +65,13 @@ EIGEN_MATRIX(T) compute_laplacian_stencils(int n) {
 	assert(n >= 3);
 
 	EIGEN_MATRIX(T) stencils(n,n);
-	const std::vector<int> nodes;
+	std::vector<int> nodes(n);
+
+	// modern versions of C++ could use std::ranges
+	// but we will keep it simple and portable
+	for (int i = 0; i < n; ++i) {
+		nodes.push_back(i);
+	}
 
 	// some stencils are recomputed because the
 	// fd formula is symmetric. It's not a priority
