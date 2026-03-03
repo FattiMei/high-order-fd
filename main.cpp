@@ -1,12 +1,20 @@
 #include <vector>
+#include <stdlib.h>
 #include <iostream>
 #include "stencil.h"
+#include "rational.h"
 
 
-int main() {
-	std::vector<int> nodes{0, 1, 2};
-	const auto A = compute_stencil_vandermonde(0.0, 2, nodes);
-	const auto S = compute_laplacian_stencils<float>(3);
+int main(int argc, char* argv[]) {
+	int npoints = 3;
+
+	if (argc > 1) {
+		npoints = atoi(argv[1]);
+	}
+
+	const auto S = compute_laplacian_stencils<Rational<int>>(npoints);
+
+	std::cout << S << std::endl;
 
 	return 0;
 }

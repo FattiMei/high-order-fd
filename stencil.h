@@ -26,7 +26,7 @@ T factorial(T n) {
 
 template <typename T>
 EIGEN_VECTOR(T) compute_stencil_vandermonde(int order,
-                                            T center,
+                                            const T center,
                                             const std::vector<T>& nodes) {
 	const auto n = nodes.size();
 	EIGEN_MATRIX(T) A(n, n);
@@ -41,7 +41,8 @@ EIGEN_VECTOR(T) compute_stencil_vandermonde(int order,
 				A(i,j) = static_cast<T>(1);
 			}
 			else {
-				A(i,j) = A(i-1,j) * (nodes[j] - center);
+				// We need to implement this operation
+				A(i,j) = A(i-1,j) * (nodes[j] + (-center));
 			}
 		}
 
@@ -85,8 +86,8 @@ EIGEN_MATRIX(T) compute_laplacian_stencils(int n) {
 	// It's not a priority to remove this redundancy
 	for (int i = 0; i < n; ++i) {
 		stencils.row(i) = compute_stencil_vandermonde<T>(2,                 // order
-                                                                 static_cast<T>(i), // center
-                                                                 nodes);
+		                                                 static_cast<T>(i), // center
+		                                                 nodes);
 	}
 
 	return stencils;
