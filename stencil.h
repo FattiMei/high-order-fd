@@ -8,7 +8,7 @@
 
 // these are macro definitions for a dynamic Eigen::Matrix with a custom scalar type
 #define EIGEN_VECTOR(T) Eigen::Matrix<T, Eigen::Dynamic, 1>
-#define EIGEN_MATRIX(T) Eigen::Matrix<T, Eigen::Dynamic, 2>
+#define EIGEN_MATRIX(T) Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>
 
 
 template <typename T>
@@ -25,10 +25,9 @@ T factorial(T n) {
 
 
 template <typename T>
-EIGEN_VECTOR(T) compute_stencil_vandermonde(T center,
-                                            int order,
-                                            const std::vector<int>& nodes) {
-
+EIGEN_VECTOR(T) compute_stencil_vandermonde(int order,
+                                            T center,
+                                            const std::vector<T>& nodes) {
 	const auto n = nodes.size();
 	EIGEN_MATRIX(T) A(n, n);
 	EIGEN_VECTOR(T) b(n);
@@ -42,7 +41,7 @@ EIGEN_VECTOR(T) compute_stencil_vandermonde(T center,
 				A(i,j) = static_cast<T>(1);
 			}
 			else {
-				A(i,j) = A(i-1,j) * static_cast<T>(nodes[j]);
+				A(i,j) = A(i-1,j) * (nodes[j] - center);
 			}
 		}
 
@@ -61,22 +60,33 @@ EIGEN_VECTOR(T) compute_stencil_vandermonde(T center,
 
 
 template <typename T>
+EIGEN_VECTOR(T) compute_stencil_fornberg(int order,
+                                         T center,
+                                         const std::vector<T>& nodes) {
+	// TODO
+	return EIGEN_VECTOR(T)();
+}
+
+
+template <typename T>
 EIGEN_MATRIX(T) compute_laplacian_stencils(int n) {
 	assert(n >= 3);
 
 	EIGEN_MATRIX(T) stencils(n,n);
-	std::vector<int> nodes(n);
 
 	// modern versions of C++ could use std::ranges
 	// but we will keep it simple and portable
+	std::vector<T> nodes(n);
 	for (int i = 0; i < n; ++i) {
-		nodes.push_back(i);
+		nodes[i] = static_cast<T>(i);
 	}
 
-	// some stencils are recomputed because the
-	// fd formula is symmetric. It's not a priority
+	// some stencils are recomputed because the fd formula is symmetric.
+	// It's not a priority to remove this redundancy
 	for (int i = 0; i < n; ++i) {
-		stencils.row(i) = compute_stencil_vandermonde<T>(i, 2, nodes);
+		stencils.row(i) = compute_stencil_vandermonde<T>(2,                 // order
+                                                                 static_cast<T>(i), // center
+                                                                 nodes);
 	}
 
 	return stencils;
