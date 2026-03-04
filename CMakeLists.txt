@@ -10,3 +10,6 @@ find_package(Eigen3 REQUIRED NO_MODULE)
 
 add_executable(high-order main.cpp)
 target_link_libraries(high-order Eigen3::Eigen)
+
+
+add_executable(test_boost_mutation test_boost_mutation.cpp)
