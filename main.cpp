@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
 		npoints = atoi(argv[1]);
 	}
 
-	const auto S = compute_laplacian_stencils<Rational<int>>(npoints);
+	const auto S = compute_laplacian_stencils<boost::rational<long>>(npoints);
 
 	std::cout << S << std::endl;
 

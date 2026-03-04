@@ -24,6 +24,7 @@ T factorial(T n) {
 }
 
 
+// here T is the working precision, U is another
 template <typename T>
 EIGEN_VECTOR(T) compute_stencil_vandermonde(int order,
                                             const T center,
@@ -35,17 +36,20 @@ EIGEN_VECTOR(T) compute_stencil_vandermonde(int order,
 	// we don't have necessarily access to std::pow, so we build our
 	// own implementation for computing:
 	//   A(i,j) = nodes[j]^i
-	for (int i = 0; i < n; ++i) {
-		for (int j = 0; j < n; ++j) {
-			if (i == 0) {
-				A(i,j) = static_cast<T>(1);
-			}
-			else {
-				// We need to implement this operation
-				A(i,j) = A(i-1,j) * (nodes[j] + (-center));
-			}
-		}
+	//
+	// we exploit the fact that Eigen matrices are stored in col-major
+	// format
+	for (int j = 0; j < n; ++j) {
+		const auto displacement = nodes[j] - center;
+		T acc = static_cast<T>(1);
 
+		for (int i = 0; i < n; ++i) {
+			A(i,j) = acc;
+			acc *= displacement;
+		}
+	}
+
+	for (int i = 0; i < n; ++i) {
 		b(i) = (i == order)
 		     ? static_cast<T>(factorial(i))
 		     : static_cast<T>(0);
@@ -85,8 +89,8 @@ EIGEN_MATRIX(T) compute_laplacian_stencils(int n) {
 	// some stencils are recomputed because the fd formula is symmetric.
 	// It's not a priority to remove this redundancy
 	for (int i = 0; i < n; ++i) {
-		stencils.row(i) = compute_stencil_vandermonde<T>(2,                 // order
-		                                                 static_cast<T>(i), // center
+		stencils.row(i) = compute_stencil_vandermonde<T>(2,      // order
+		                                                 i,      // center
 		                                                 nodes);
 	}
 

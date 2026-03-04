@@ -2,7 +2,7 @@
 #define __RATIONAL_H__
 
 
-#include <ostream>
+#include <Eigen/Core>
 #include <boost/rational.hpp>
 
 
@@ -12,101 +12,30 @@
 //
 // The implementation must provide pure arithmetic operations such that
 // a generic expression `a op b` doesn't mutate any of the variables.
-// This is critical because I have third party code (Eigen) that uses this
-// scalar type and I can't make any assumptions
 //
-// I decided to wrap the `boost::rational<IntType>` class instead of inherit
-// from so that I control every behaviour
+// The boost::rational type doesn't explicitly provide pure binary operators
+// (+, -, *, /), but only their operator+assignment versions (+=, -=, *=, /=)
+// It seems that the C++ compiler is smart enough to fill the gaps
+namespace Eigen {
 template <typename IntType>
-class Rational {
-public:
-	Rational() : r_() {}
-	Rational(int n) : r_(n) {}
+struct NumTraits<boost::rational<IntType>> : GenericNumTraits<boost::rational<IntType>> {
+	typedef boost::rational<IntType> Real;
+	typedef boost::rational<IntType> NonInteger;
 
-	Rational operator-() const {
-		boost::rational<IntType> tmp = r_;
-		tmp = -tmp;
+	enum {
+		IsComplex = 0,
+		IsInteger = 0,
+		IsSigned = 1,
+		RequireInitialization = 1,
+		ReadCost = Eigen::HugeCost,
+		AddCost = Eigen::HugeCost,
+		MulCost = Eigen::HugeCost
+	};
 
-		return Rational(tmp);
-	}
-
-	// most of the arithmetic operators implemented in
-	// boost::rational mutate the first operand!
-	Rational operator+(const Rational& other) const {
-		boost::rational<IntType> tmp = r_;
-		tmp += other.r_;
-
-		return Rational(tmp);
-	}
-
-	Rational operator*(const Rational& other) const {
-		boost::rational<IntType> tmp = r_;
-		tmp *= other.r_;
-
-		return Rational(tmp);
-	}
-
-	// in-place operators
-	Rational& operator+=(const Rational& other) {
-		r_ += other.r_;
-
-		return *this;
-	}
-
-	Rational& operator-=(const Rational& other) {
-		r_ -= other.r_;
-
-		return *this;
-	}
-
-	Rational& operator*=(const Rational& other) {
-		r_ *= other.r_;
-
-		return *this;
-	}
-
-	Rational& operator/=(const Rational& other) {
-		r_ /= other.r_;
-
-		return *this;
-	}
-
-	// comparison operators
-	bool operator==(const Rational& q) const { return r_ == q.r_; }
-	bool operator> (const Rational& q) const { return r_  > q.r_; }
-	bool operator< (const Rational& q) const { return r_  < q.r_; }
-
-	// conversion operators
-	// this may be templated on the `std::floating_point` concept
-	explicit operator double() const {
-		return rational_cast<double>(r_);
-	}
-
-	// can we make `r_` private? I know the `abs` function needs to access it
-	// but I don't want users of Rational to inspect its internal state
-	boost::rational<IntType> r_;
-	Rational(const boost::rational<IntType>& r) : r_(r) {}
+	static inline Real epsilon() { return 0; }
+	static inline int digits10() { return 0; }
 };
 
-
-// I wanted to completely hide to the user boost::rational, but it seems impossible...
-// I think the problem lies in the templating: if the user wants a Rational<UserType>,
-// then he must be able to see boost::rational<UserType>.
-template <typename IntType>
-Rational<IntType> abs(const Rational<IntType>& r) {
-	// in the absence of move constructors this line wouldn't work
-	// return Rational<IntType>(abs(r.r_));
-
-	const auto tmp = abs(r.r_);
-
-	return Rational<IntType>(tmp);
 }
-
-
-template <typename IntType>
-std::ostream& operator<<(std::ostream& out, const Rational<IntType>& r) {
-	return out << r.r_;
-}
-
 
 #endif // __RATIONAL_H__
