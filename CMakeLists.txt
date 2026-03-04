@@ -13,3 +13,6 @@ target_link_libraries(high-order Eigen3::Eigen)
 
 
 add_executable(test_boost_mutation test_boost_mutation.cpp)
+
+add_executable(test_stencils test_stencils.cpp)
+target_link_libraries(test_stencils Eigen3::Eigen)
