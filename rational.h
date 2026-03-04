@@ -30,6 +30,8 @@ public:
 		return Rational(tmp);
 	}
 
+	// most of the arithmetic operators implemented in
+	// boost::rational mutate the first operand!
 	Rational operator+(const Rational& other) const {
 		boost::rational<IntType> tmp = r_;
 		tmp += other.r_;
@@ -75,15 +77,21 @@ public:
 	bool operator< (const Rational& q) const { return r_  < q.r_; }
 
 	// conversion operators
+	// this may be templated on the `std::floating_point` concept
+	explicit operator double() const {
+		return rational_cast<double>(r_);
+	}
 
-	// In order to behave like a value type, this can't be const
+	// can we make `r_` private? I know the `abs` function needs to access it
+	// but I don't want users of Rational to inspect its internal state
 	boost::rational<IntType> r_;
 	Rational(const boost::rational<IntType>& r) : r_(r) {}
 };
 
 
-// I need this function to be declared for Eigen to work,
-// but this implementation needs to look at data I wanted to be private...
+// I wanted to completely hide to the user boost::rational, but it seems impossible...
+// I think the problem lies in the templating: if the user wants a Rational<UserType>,
+// then he must be able to see boost::rational<UserType>.
 template <typename IntType>
 Rational<IntType> abs(const Rational<IntType>& r) {
 	// in the absence of move constructors this line wouldn't work
