@@ -6,6 +6,97 @@
 #include <boost/rational.hpp>
 
 
+// I need the rational type to provide the conversion
+// operator to floating point types. This must be
+// a **non-static member function**
+template <typename IntType>
+class rational {
+public:
+	rational() : internal_r() {}
+	rational(IntType n) : internal_r(n) {}
+	rational(boost::rational<IntType> &r) : internal_r(r) {}
+
+	rational<IntType> operator-() const {
+		auto tmp = internal_r;
+		tmp = -tmp;
+
+		return rational(tmp);
+	}
+
+	rational<IntType> operator+(const rational<IntType>& r) const {
+		auto tmp = internal_r;
+		tmp += r.internal_r;
+
+		return rational(tmp);
+	}
+
+	rational<IntType> operator-(const rational<IntType>& r) const {
+		auto tmp = internal_r;
+		tmp -= r.internal_r;
+
+		return rational(tmp);
+	}
+
+	rational<IntType> operator*(const rational<IntType>& r) const {
+		auto tmp = internal_r;
+		tmp *= r.internal_r;
+
+		return rational(tmp);
+	}
+
+	rational<IntType> operator+=(const rational<IntType>& r) {
+		internal_r += r.internal_r;
+
+		return *this;
+	}
+
+	rational<IntType> operator-=(const rational<IntType>& r) {
+		internal_r -= r.internal_r;
+
+		return *this;
+	}
+
+	rational<IntType> operator*=(const rational<IntType>& r) {
+		internal_r *= r.internal_r;
+
+		return *this;
+	}
+
+	rational<IntType> operator/=(const rational<IntType>& r) {
+		internal_r /= r.internal_r;
+
+		return *this;
+	}
+
+	bool operator==(const rational<IntType> &r) const {
+		return internal_r == r.internal_r;
+	}
+
+	bool operator<(const rational<IntType> &r) const {
+		return internal_r < r.internal_r;
+	}
+
+	bool operator>(const rational<IntType> &r) const {
+		return internal_r > r.internal_r;
+	}
+
+	template <typename FloatType>
+	operator FloatType() const {
+		return boost::rational_cast<FloatType>(internal_r);
+	}
+
+	boost::rational<IntType> internal_r;
+};
+
+
+template <typename IntType>
+rational<IntType> abs(const rational<IntType>& r) {
+	auto tmp = abs(r.internal_r);
+
+	return rational<IntType>(tmp);
+}
+
+
 // Rational numbers are required for doing the stencil computations
 // in exact arithmetic. Rather than implement them by myself, I
 // decided to include the boost dependency.
@@ -18,9 +109,9 @@
 // It seems that the C++ compiler is smart enough to fill the gaps
 namespace Eigen {
 template <typename IntType>
-struct NumTraits<boost::rational<IntType>> : GenericNumTraits<boost::rational<IntType>> {
-	typedef boost::rational<IntType> Real;
-	typedef boost::rational<IntType> NonInteger;
+struct NumTraits<rational<IntType>> : GenericNumTraits<rational<IntType>> {
+	typedef rational<IntType> Real;
+	typedef rational<IntType> NonInteger;
 
 	enum {
 		IsComplex = 0,
@@ -35,7 +126,7 @@ struct NumTraits<boost::rational<IntType>> : GenericNumTraits<boost::rational<In
 	static inline Real epsilon() { return 0; }
 	static inline int digits10() { return 0; }
 };
-
 }
+
 
 #endif // __RATIONAL_H__
