@@ -7,79 +7,109 @@
 
 // this file tests some finite difference stencils
 // against the ones reported in the Fornberg paper at
-// https://www.colorado.edu/amath/sites/default/files/attached-files/mathcomp_88_fd_formulas.pdf
+//   https://www.colorado.edu/amath/sites/default/files/attached-files/mathcomp_88_fd_formulas.pdf
 //
-// I wonder if there is a good way of performing such tests.
-// For example one could specify in a declarative way:
-//   * the order of derivative
-//   * the nodes
-//   * the coefficients
-// and the system would be able to automatically generate the tests.
-//
-// Right now there is some degree of boilerplate and repetition.
-// I'm quite confident in the correctness of my implementation, but
-// it's definitely worth a try
-int main() {
-	using R = boost::rational<int>;
+// every stencil here assumes the approximations for x = 0
 
-	// first derivative, centered at 0
+
+using Rational = boost::rational<long long>;
+#define R(num,den) Rational(num,den)
+
+
+struct Stencil {
+	const int derivative_order;
+	const std::vector<Rational> nodes;
+	const std::vector<Rational> weights;
+};
+
+
+const std::vector<Stencil> test_cases {
 	{
-		const R center = 0;
+		1,                   // order of derivative
+		{-1, 0, 1},          // nodes
+		{R(-1,2), 0, R(1,2)} // weights
+	},
+	{
+		1,
+		{-2, -1, 0, 1, 2},
+		{R(1,12), R(-2,3), 0, R(2,3), R(-1,12)}
+	},
+	{
+		1,
+		{-3, -2, -1, 0, 1, 2, 3},
+		{R(-1,60), R(3,20), R(-3,4), 0, R(3,4), R(-3,20), R(1,60)}
+	},
+	{
+		1,
+		{-4, -3, -2, -1, 0, 1, 2, 3, 4},
+		{R(1,280), R(-4,105), R(1,5), R(-4,5), 0, R(4,5), R(-1,5), R(4,105), R(-1,280)}
+	},
+	{
+		2,
+		{-1, 0, 1},
+		{1, -2, 1}
+	},
+	{
+		2,
+		{-2, 1, 0, 1, 2},
+		{R(-1,12), R(4,3), R(-5,2), R(4,3), R(-1,12)}
+	},
+	{
+		0,
+		{R(-7,2), R(-5,2), R(-3,2), R(-1,2), R(1,2), R(3,2), R(5,2), R(7,2)},
+		{R(-5,2048), R(49,2048), R(-245,2048), R(1225,2048), R(1225,2048), R(-245,2048), R(49,2048), R(-5,2048)}
+	},
+};
 
-		{
-			const std::vector<R> nodes{-1, 0, 1};
-			EIGEN_VECTOR(R) expected(nodes.size());
-			expected << R(-1,2), R(0), R(1,2);
 
-			const auto computed = compute_stencil_vandermonde(1, center, nodes);
+template <typename T>
+EIGEN_VECTOR(T) std_vector_to_eigen(const std::vector<T>& v) {
+	EIGEN_VECTOR(T) result(v.size());
 
-			assert(expected == computed);
-		}
-
-		{
-			const std::vector<R> nodes{-2, -1, 0, 1, 2};
-			EIGEN_VECTOR(R) expected(nodes.size());
-			expected << R(1,12), R(-2,3), R(0), R(2,3), R(-1,12);
-
-			const auto computed = compute_stencil_vandermonde(1, center, nodes);
-
-			assert(expected == computed);
-		}
+	for (int i = 0; i < v.size(); ++i) {
+		result(i) = v[i];
 	}
 
-	// second derivative, centered at 0
-	{
-		const R center = 0;
+	return result;
+}
 
-		{
-			const std::vector<R> nodes{-1, 0, 1};
-			EIGEN_VECTOR(R) expected(nodes.size());
-			expected << R(1), R(-2), R(1);
 
-			const auto computed = compute_stencil_vandermonde(2, center, nodes);
+int main() {
+	bool ok = true;
 
-			assert(expected == computed);
+	for (const auto& stencil : test_cases) {
+		const Rational center = 0;
+		const auto& derivative_order = stencil.derivative_order;
+		const auto& nodes = stencil.nodes;
+		const EIGEN_VECTOR(Rational) weights = compute_stencil_vandermonde(derivative_order,
+		                                                                   center,
+		                                                                   nodes);
+
+		assert(nodes.size() == stencil.weights.size());
+
+#if 1
+		// I need to compare the reference weights (std::vector<Rational>)
+		// with the computed weights (EIGEN_VECTOR(Rational))
+		//
+		// In order to have structured error messages, I decided
+		// it was best to build an EIGEN_VECTOR(Rational) from the original
+		// weights
+		const auto reference_weights = std_vector_to_eigen(stencil.weights);
+
+		if (weights != reference_weights) {
+			ok = false;
+			std::cout << "ERROR" << std::endl;
+			std::cout << "derivative order = " << derivative_order << std::endl;
+
+			std::cout << "reference weights" << std::endl;
+			for (const auto &x : reference_weights) std::cout << x << " ";
+			std::cout << std::endl;
+
+			std::cout << "actual weights" << std::endl;
+			for (const auto &x : weights) std::cout << x << " ";
+			std::cout << std::endl;
 		}
-
-		{
-			const std::vector<R> nodes{-2, -1, 0, 1, 2};
-			EIGEN_VECTOR(R) expected(nodes.size());
-			expected << R(-1,12), R(4,3), R(-5,2), R(4,3), R(-1,12);
-
-			const auto computed = compute_stencil_vandermonde(2, center, nodes);
-
-			assert(expected == computed);
-		}
-
-		{
-			const std::vector<R> nodes{-3, -2, -1, 0, 1, 2, 3};
-			EIGEN_VECTOR(R) expected(nodes.size());
-			expected << R(1,90), R(-3,20), R(3,2), R(-49,18), R(3,2), R(-3,20), R(1,90);
-
-			const auto computed = compute_stencil_vandermonde(2, center, nodes);
-
-			assert(expected == computed);
-		}
+#endif
 	}
 
 	return 0;
