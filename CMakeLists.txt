@@ -8,7 +8,7 @@ find_package(Boost 1.83.0 REQUIRED)
 find_package(Eigen3 REQUIRED NO_MODULE)
 
 
-add_executable(high-order main.cpp)
+add_executable(high-order main.cpp solver.cpp)
 target_link_libraries(high-order Eigen3::Eigen)
 
 
