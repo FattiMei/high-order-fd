@@ -39,7 +39,7 @@ protected:
 };
 
 
-class GeneralStencilSolver : AbstractSolver {
+class GeneralStencilSolver : public AbstractSolver {
 public:
 	GeneralStencilSolver(int npoints);
 

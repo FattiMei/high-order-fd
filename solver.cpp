@@ -1,6 +1,7 @@
 #include <cassert>
 #include <iostream>
 #include "solver.h"
+#include "stencil.h"
 
 
 std::chrono::duration<double>
@@ -14,11 +15,45 @@ AbstractSolver::solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
 
 
 GeneralStencilSolver::GeneralStencilSolver(int npoints) {
+	stencils = compute_laplacian_stencils<double>(npoints);
 }
 
 
 Eigen::SparseMatrix<double> assemble_system_matrix(const Eigen::MatrixXd& stencils, int n) {
+	Eigen::SparseMatrix<double> A(n,n);
+	const int nodes = stencils.cols();
+	const double h = 1.0 / (n - 1.0);
 
+	A.coeffRef(0,0) = 1.0;
+
+	for (int i = 1; i < n-1; ++i) {
+		int centerPos;
+
+		// I don't like this implementation because
+		// it's not very clear.
+		//
+		// I will change it soon
+		if (i < nodes/2) {
+			centerPos = i;
+		}
+		else if (n-1-i < nodes/2) {
+			centerPos = nodes - (n-1-i);
+		}
+		else {
+			centerPos = nodes/2;
+		}
+
+		for (int j = 0; j < nodes; ++j) {
+			A.coeffRef(i, i-centerPos+j) = stencils(centerPos,j);
+		}
+
+		A.coeffRef(i,i) += h*h;
+	}
+
+	A.coeffRef(n-1,n-1) = 1.0;
+
+	A.makeCompressed();
+	return A;
 }
 
 

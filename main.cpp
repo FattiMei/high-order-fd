@@ -1,10 +1,8 @@
-#include <chrono>
 #include <vector>
 #include <iostream>
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
-#include "stencil.h"
-#include "rational.h"
+#include "solver.h"
 
 
 Eigen::VectorXd compute_mesh(const int n) {
@@ -35,49 +33,12 @@ Eigen::VectorXd assemble_rhs(const int n) {
 }
 
 
-template <typename T>
-Eigen::SparseMatrix<double> assemble_matrix(const EIGEN_MATRIX(T) &stencil, const int n) {
-	Eigen::SparseMatrix<double> A(n,n);
-	const int nodes = stencil.cols();
-	const double h = 1.0 / (n - 1.0);
-
-	A.coeffRef(0,0) = 1.0;
-
-	for (int i = 1; i < n-1; ++i) {
-		int centerPos;
-
-		if (i < nodes/2) {
-			centerPos = i;
-		}
-		else if (n-1-i < nodes/2) {
-			centerPos = nodes - (n-1-i);
-		}
-		else {
-			centerPos = nodes/2;
-		}
-
-		for (int j = 0; j < nodes; ++j) {
-			A.coeffRef(i, i-centerPos+j) = stencil(centerPos,j);
-		}
-
-		A.coeffRef(i,i) += h*h;
-	}
-
-
-	A.coeffRef(n-1,n-1) = 1.0;
-
-	A.makeCompressed();
-	return A;
-}
-
-
 int main(int argc, char* argv[]) {
-	using rational = rational<long>;
-	std::vector<std::pair<int, EIGEN_MATRIX(rational)>> stencils{
-		{3, compute_laplacian_stencils<rational>(3)},
-		{5, compute_laplacian_stencils<rational>(5)},
-		{7, compute_laplacian_stencils<rational>(7)},
-		{9, compute_laplacian_stencils<rational>(9)}
+	std::vector<AbstractSolver*> solvers{
+		new GeneralStencilSolver(3),
+		new GeneralStencilSolver(5),
+		new GeneralStencilSolver(7),
+		new GeneralStencilSolver(9),
 	};
 
 	std::cout << "n,order,errnorm,residual,walltime[ns]" << std::endl;
@@ -86,33 +47,21 @@ int main(int argc, char* argv[]) {
 		Eigen::VectorXd mesh = compute_mesh(n);
 		Eigen::VectorXd sol  = compute_exact_solution(mesh);
 		Eigen::VectorXd b    = assemble_rhs(n);
+		Eigen::VectorXd x(n);
 
-		for (auto &[points, stencil] : stencils) {
-			const auto start = std::chrono::high_resolution_clock::now();
-
-			Eigen::SparseMatrix<double> A = assemble_matrix(stencil, n);
-			Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
-			solver.compute(A);
-
-			if (solver.info() != Eigen::Success) {
-				std::cerr << "Decomposition failed" << std::endl;
-				return -1;
-			}
-
-			const Eigen::VectorXd x = solver.solve(b);
-
-			const auto delta = std::chrono::high_resolution_clock::now() - start;
+		for (AbstractSolver* solver : solvers) {
+			const auto elapsed_time = solver->solve(x, b);
 
 			std::cout
 				<< n
 				<< ','
-				<< points
+				<< 0 // this should be the name of the solver
 				<< ','
 				<< (sol - x).norm()
 				<< ','
-				<< (b - A*x).norm()
+				<< 0 // and this should be the residual
 				<< ','
-				<< std::chrono::duration_cast<std::chrono::nanoseconds>(delta).count()
+				<< elapsed_time
 				<< std::endl;
 		}
 	}
