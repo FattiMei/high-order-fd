@@ -30,9 +30,7 @@ public:
 	//   `rhs` is the right hand side of the general discretized problem Ax=b
 	std::chrono::duration<double> solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs);
 
-	// this must be changed, I need a constant reference
-	// for the moment I'll leave it like that
-	virtual const std::string name() = 0;
+	virtual const std::string& name() const = 0;
 
 protected:
 	virtual void solve_internal(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) = 0;
@@ -43,10 +41,7 @@ class GeneralStencilSolver : public AbstractSolver {
 public:
 	GeneralStencilSolver(int npoints);
 
-	virtual const std::string name() override {
-		// this is obv a mock implementation
-		return "";
-	}
+	virtual const std::string& name() const override;
 
 protected:
 	virtual void solve_internal(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) override;
@@ -54,6 +49,8 @@ protected:
 private:
 	Eigen::SparseLU<Eigen::SparseMatrix<double>> sparse_solver;
 	Eigen::MatrixXd stencils;
+
+	std::string name_internal;
 };
 
 

@@ -16,6 +16,23 @@ AbstractSolver::solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
 
 GeneralStencilSolver::GeneralStencilSolver(int npoints) {
 	stencils = compute_laplacian_stencils<double>(npoints);
+
+	// I'm currently open to changing ideas about
+	// producing the formatted string "%d-points"
+	//
+	// I don't like to use std::format because it will
+	// lock the user into compiling with C++20 and
+	// not every system supports it
+	std::stringstream ss;
+	ss << npoints << "-points";
+
+	name_internal = ss.str();
+}
+
+
+const std::string&
+GeneralStencilSolver::name() const {
+	return name_internal;
 }
 
 

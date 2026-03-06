@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
 			std::cout
 				<< n
 				<< ','
-				<< 0 // this should be the name of the solver
+				<< solver->name()
 				<< ','
 				<< (sol - x).norm()
 				<< ','
