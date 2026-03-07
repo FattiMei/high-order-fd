@@ -15,7 +15,7 @@ AbstractSolver::solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
 
 
 GeneralStencilSolver::GeneralStencilSolver(int npoints) {
-	stencils = compute_laplacian_stencils<double>(npoints);
+	stencils = compute_laplacian_stencils(npoints);
 
 	// I'm currently open to changing ideas about
 	// producing the formatted string "%d-points"

@@ -6,96 +6,42 @@
 #include <eigen3/Eigen/Dense>
 
 
+// In the original implementation I used to compute
+// the stencils in double precision.
+//
+// I got second thoughts about the accuracy of the
+// stencils when I experimented with rational numbers.
+// In this particular case, rational arithmetic would be exact
+// and so the stencils would be computed with no error.
+//
+// The solution proposed was to template the stencil
+// calculations with the desired type and I planned on using:
+//   * double
+//   * boost::rational<long>
+// this promptly made me integrate boost::rational<IntType>
+// with the Eigen library.
+//
+// But the rational type was introduced to test the hypothesis
+// that some degree of error in the stencil calculations would
+// have a measurable effect on the error of the final solutions.
+//
+// This can be tested with `long doubles` before introducing
+// rational numbers!
+
+
+// this should later be controlled by compile flags
+using StencilPrecision = double;
+
+
 // these are macro definitions for a dynamic Eigen::Matrix with a custom scalar type
 #define EIGEN_VECTOR(T) Eigen::Matrix<T, Eigen::Dynamic, 1>
 #define EIGEN_MATRIX(T) Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>
 
 
-template <typename T>
-T factorial(T n) {
-	T acc = 1;
-
-	while (n > 1) {
-		acc *= n;
-		--n;
-	}
-
-	return acc;
-}
-
-
-// here T is the working precision, U is another
-template <typename T>
-EIGEN_VECTOR(T) compute_stencil_vandermonde(int order,
-                                            const T center,
-                                            const std::vector<T>& nodes) {
-	const auto n = nodes.size();
-	EIGEN_MATRIX(T) A(n, n);
-	EIGEN_VECTOR(T) b(n);
-
-	// we don't have necessarily access to std::pow, so we build our
-	// own implementation for computing:
-	//   A(i,j) = nodes[j]^i
-	//
-	// we exploit the fact that Eigen matrices are stored in col-major
-	// format
-	for (int j = 0; j < n; ++j) {
-		const auto displacement = nodes[j] - center;
-		T acc = static_cast<T>(1);
-
-		for (int i = 0; i < n; ++i) {
-			A(i,j) = acc;
-			acc *= displacement;
-		}
-	}
-
-	for (int i = 0; i < n; ++i) {
-		b(i) = (i == order)
-		     ? static_cast<T>(factorial(i))
-		     : static_cast<T>(0);
-	}
-
-
-	// the full pivoting solver is the best choice for this case because:
-	//   * we are solving small systems, so we don't care about speed
-	//   * we want the highest precision possible, even if we will be
-	//     using exact arithmetic for most of the time
-	return A.fullPivLu().solve(b);
-}
-
-
-template <typename T>
-EIGEN_VECTOR(T) compute_stencil_fornberg(int order,
-                                         T center,
-                                         const std::vector<T>& nodes) {
-	// TODO
-	return EIGEN_VECTOR(T)();
-}
-
-
-template <typename T>
-EIGEN_MATRIX(T) compute_laplacian_stencils(int n) {
-	assert(n >= 3);
-
-	EIGEN_MATRIX(T) stencils(n,n);
-
-	// modern versions of C++ could use std::ranges
-	// but we will keep it simple and portable
-	std::vector<T> nodes(n);
-	for (int i = 0; i < n; ++i) {
-		nodes[i] = static_cast<T>(i);
-	}
-
-	// some stencils are recomputed because the fd formula is symmetric.
-	// It's not a priority to remove this redundancy
-	for (int i = 0; i < n; ++i) {
-		stencils.row(i) = compute_stencil_vandermonde<T>(2,      // order
-		                                                 i,      // center
-		                                                 nodes);
-	}
-
-	return stencils;
-}
+EIGEN_VECTOR(StencilPrecision) compute_stencil_vandermonde(int order,
+                                                           const StencilPrecision center,
+                                                           const std::vector<StencilPrecision>& nodes);
+EIGEN_MATRIX(StencilPrecision) compute_laplacian_stencils(int npoints);
 
 
 #endif // __STENCIL_H__
