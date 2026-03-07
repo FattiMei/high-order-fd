@@ -2,6 +2,16 @@
 #include "stencil.h"
 
 
+// this should be controlled by some compilation flags
+// the whole interface is designed so that changing the working precision
+// won't trigger ricompilations elsewhere
+using StencilPrecision = double;
+
+
+#define EIGEN_VECTOR(T) Eigen::Matrix<T, Eigen::Dynamic, 1>
+#define EIGEN_MATRIX(T) Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>
+
+
 void fill_vandermonde(EIGEN_MATRIX(StencilPrecision)& A,
                       const StencilPrecision center,
                       const std::vector<StencilPrecision>& nodes) {
@@ -11,7 +21,7 @@ void fill_vandermonde(EIGEN_MATRIX(StencilPrecision)& A,
 
 	const int n = A.rows();
 
-	// we don't have necessarily access to std::pow, so we build our
+	// we might not have access to std::pow, so we build our
 	// own implementation for computing:
 	//   A(i,j) = nodes[j]^i
 	//
@@ -42,28 +52,28 @@ T factorial(T n) {
 }
 
 
-EIGEN_MATRIX(StencilPrecision) compute_laplacian_stencils(int n) {
+// the laplacian stencils are used to assemble a sparse
+// matrix which will always be Eigen::SparseMatrix<double>
+Eigen::MatrixXd compute_laplacian_stencils(int n) {
 	assert(n > 2);
 
-	EIGEN_MATRIX(StencilPrecision) stencils(n, n);
 	const int derivative_order = 2;
-
-	// I'm sure there are better ways to
-	// initialize this vector
-	std::vector<StencilPrecision> nodes(n);
-	for (int i = 0; i < n; ++i) {
-		nodes[i] = i;
-	}
-
+	EIGEN_MATRIX(StencilPrecision) stencils(n, n);
 	EIGEN_MATRIX(StencilPrecision) A(n, n);
 	EIGEN_VECTOR(StencilPrecision) b(n);
 
+	std::vector<StencilPrecision> nodes(n);
 	for (int i = 0; i < n; ++i) {
+		nodes[i] = i;
+
 		b(i) = (i == derivative_order)
 		     ? factorial(i)
 		     : 0;
 	}
 
+	// this implementation exposes details of the stencil calculation,
+	// but it's a good thing because it saves me some memory allocations
+	// and redundant initializations
 	for (int i = 0; i < n; ++i) {
 		fill_vandermonde(A, i, nodes);
 
