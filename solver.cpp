@@ -15,11 +15,16 @@ Solver::solve_profiled(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
 
 
 static Eigen::SparseMatrix<double> assemble_system_matrix(int n, const Eigen::MatrixXd& stencils) {
-	Eigen::SparseMatrix<double> A(n,n);
 	const int nodes = stencils.cols();
 	const double h = 1.0 / (n - 1.0);
 
-	A.coeffRef(0,0) = 1.0;
+	// reserving a known amount of space of the matrix entries
+	// and following the suggestions of the documentation
+	// allow for great improvements
+	Eigen::SparseMatrix<double> A(n,n);
+	A.reserve(Eigen::VectorXi::Constant(n, nodes));
+
+	A.insert(0,0) = 1.0;
 
 	for (int i = 1; i < n-1; ++i) {
 		int centerPos;
@@ -39,13 +44,13 @@ static Eigen::SparseMatrix<double> assemble_system_matrix(int n, const Eigen::Ma
 		}
 
 		for (int j = 0; j < nodes; ++j) {
-			A.coeffRef(i, i-centerPos+j) = stencils(centerPos,j);
+			A.insert(i, i-centerPos+j) = stencils(centerPos,j);
 		}
 
 		A.coeffRef(i,i) += h*h;
 	}
 
-	A.coeffRef(n-1,n-1) = 1.0;
+	A.insert(n-1,n-1) = 1.0;
 	A.makeCompressed();
 
 	return A;

@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
 		new Stencil(9),
 	};
 
-	std::cout << "n,name,errnorm,resnorm,walltime" << std::endl;
+	std::cout << "n,name,errnorm,resnorm,assemble_time,solve_time" << std::endl;
 
 	for (int n = 16; n < 20000; n *= 2) {
 		const Eigen::VectorXd mesh = compute_mesh(n);
@@ -50,9 +50,13 @@ int main(int argc, char* argv[]) {
 		Eigen::VectorXd x(n);
 
 		for (const Discretization* discr : discretizations) {
+			const auto start_time = std::chrono::high_resolution_clock::now();
 			std::unique_ptr<Solver> solver = discr->generate_solver(n);
+			const auto end_time = std::chrono::high_resolution_clock::now();
 
-			const auto elapsed_time = solver->solve_profiled(x, rhs);
+			const std::chrono::duration<double> assemble_time = end_time - start_time;
+
+			const auto solve_time = solver->solve_profiled(x, rhs);
 			solver->residual(res, x, rhs);
 
 			std::cout
@@ -64,7 +68,9 @@ int main(int argc, char* argv[]) {
 				<< ','
 				<< res.norm()
 				<< ','
-				<< elapsed_time
+				<< assemble_time
+				<< ','
+				<< solve_time
 				<< std::endl;
 		}
 	}
