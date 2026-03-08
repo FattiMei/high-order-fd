@@ -3,54 +3,67 @@
 
 
 #include <chrono>
+#include <memory>
 #include <string>
 #include <Eigen/Core>
 #include <Eigen/Sparse>
 
 
-// This abstract class is designed for:
-//   * unify the possible solver implementations
-//   * having an iterable container of solvers
-//
-// this interface let's me
-//   * remove the solving logic from the main file
-//   * conveniently add new solver implementations
-//
-// 
-// IMPORTANT: since I'm planning to solve only this problem
-// on a regular mesh:
-//   u'' + u = 0
-//   u(0) = 0
-//   u(1) = 1
-// the solvers will make every assumption possible
-class AbstractSolver {
+class Solver {
 public:
-	// measures the time elapsed for a concrete solver procedure
-	//   `x` is the destination vector for the solution
-	//   `rhs` is the right hand side of the general discretized problem Ax=b
-	std::chrono::duration<double> solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs);
-
-	virtual const std::string& name() const = 0;
-
-protected:
-	virtual void solve_internal(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) = 0;
+	virtual std::chrono::duration<double> solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) = 0;
+	virtual void residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const Eigen::VectorXd& rhs) const = 0;
 };
 
 
-class GeneralStencilSolver : public AbstractSolver {
+class SparseSolver : public Solver {
 public:
-	GeneralStencilSolver(int npoints);
+	SparseSolver(int problem_size, const Eigen::MatrixXd& stencils);
 
-	virtual const std::string& name() const override;
-
-protected:
-	virtual void solve_internal(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) override;
+	virtual std::chrono::duration<double> solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) override;
+	virtual void residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const Eigen::VectorXd& rhs) const override;
 
 private:
-	Eigen::SparseLU<Eigen::SparseMatrix<double>> sparse_solver;
-	Eigen::MatrixXd stencils;
+	Eigen::SparseMatrix<double> m_system_matrix;
+};
 
-	std::string name_internal;
+
+class TridiagonalSolver : public Solver {
+public:
+	TridiagonalSolver(int problem_size);
+
+	virtual std::chrono::duration<double> solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) override;
+	virtual void residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const Eigen::VectorXd& rhs) const override;
+
+private:
+};
+
+
+class Discretization {
+public:
+	virtual std::unique_ptr<Solver> generate_solver(int problem_size) const = 0;
+	virtual const std::string& name() const = 0;
+};
+
+
+class Stencil : public Discretization {
+public:
+	Stencil(int npoints);
+
+	virtual std::unique_ptr<Solver> generate_solver(int problem_size) const override;
+	virtual const std::string& name() const override;
+
+private:
+	Eigen::MatrixXd m_stencils;
+	std::string m_name;
+};
+
+
+class Tridiagonal : public Discretization {
+public:
+	Tridiagonal() {};
+
+	virtual std::unique_ptr<Solver> generate_solver(int problem_size) const override;
 };
 
 

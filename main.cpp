@@ -1,7 +1,6 @@
 #include <vector>
 #include <iostream>
-#include <Eigen/Dense>
-#include <Eigen/Sparse>
+#include <Eigen/Core>
 #include "solver.h"
 
 
@@ -34,32 +33,36 @@ Eigen::VectorXd assemble_rhs(const int n) {
 
 
 int main(int argc, char* argv[]) {
-	std::vector<AbstractSolver*> solvers{
-		new GeneralStencilSolver(3),
-		new GeneralStencilSolver(5),
-		new GeneralStencilSolver(7),
-		new GeneralStencilSolver(9),
+	std::vector<Discretization*> discretizations {
+		new Stencil(3),
+		new Stencil(5),
+		new Stencil(7),
+		new Stencil(9),
 	};
 
-	std::cout << "n,order,errnorm,residual,walltime[ns]" << std::endl;
+	std::cout << "n,name,errnorm,resnorm,walltime" << std::endl;
 
 	for (int n = 16; n < 20000; n *= 2) {
-		Eigen::VectorXd mesh = compute_mesh(n);
-		Eigen::VectorXd sol  = compute_exact_solution(mesh);
-		Eigen::VectorXd b    = assemble_rhs(n);
+		const Eigen::VectorXd mesh = compute_mesh(n);
+		const Eigen::VectorXd sol  = compute_exact_solution(mesh);
+		const Eigen::VectorXd rhs  = assemble_rhs(n);
+		Eigen::VectorXd res(n);
 		Eigen::VectorXd x(n);
 
-		for (AbstractSolver* solver : solvers) {
-			const auto elapsed_time = solver->solve(x, b);
+		for (const Discretization* discr : discretizations) {
+			std::unique_ptr<Solver> solver = discr->generate_solver(n);
+
+			const auto elapsed_time = solver->solve(x, rhs);
+			solver->residual(res, x, rhs);
 
 			std::cout
 				<< n
 				<< ','
-				<< solver->name()
+				<< discr->name()
 				<< ','
 				<< (sol - x).norm()
 				<< ','
-				<< 0 // and this should be the residual
+				<< res.norm()
 				<< ','
 				<< elapsed_time
 				<< std::endl;

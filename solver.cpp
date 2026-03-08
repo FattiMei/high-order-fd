@@ -4,39 +4,7 @@
 #include "stencil.h"
 
 
-std::chrono::duration<double>
-AbstractSolver::solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
-	const auto start_time = std::chrono::high_resolution_clock::now();
-	this->solve_internal(x, rhs);
-	const auto end_time = std::chrono::high_resolution_clock::now();
-
-	return end_time - start_time;
-}
-
-
-GeneralStencilSolver::GeneralStencilSolver(int npoints) {
-	stencils = compute_laplacian_stencils(npoints);
-
-	// I'm currently open to changing ideas about
-	// producing the formatted string "%d-points"
-	//
-	// I don't like to use std::format because it will
-	// lock the user into compiling with C++20 and
-	// not every system supports it
-	std::stringstream ss;
-	ss << npoints << "-points";
-
-	name_internal = ss.str();
-}
-
-
-const std::string&
-GeneralStencilSolver::name() const {
-	return name_internal;
-}
-
-
-Eigen::SparseMatrix<double> assemble_system_matrix(const Eigen::MatrixXd& stencils, int n) {
+static Eigen::SparseMatrix<double> assemble_system_matrix(int n, const Eigen::MatrixXd& stencils) {
 	Eigen::SparseMatrix<double> A(n,n);
 	const int nodes = stencils.cols();
 	const double h = 1.0 / (n - 1.0);
@@ -68,17 +36,23 @@ Eigen::SparseMatrix<double> assemble_system_matrix(const Eigen::MatrixXd& stenci
 	}
 
 	A.coeffRef(n-1,n-1) = 1.0;
-
 	A.makeCompressed();
+
 	return A;
 }
 
 
-void
-GeneralStencilSolver::solve_internal(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
-	const auto A = assemble_system_matrix(stencils, x.size());
+SparseSolver::SparseSolver(int problem_size, const Eigen::MatrixXd& stencils) {
+	m_system_matrix = assemble_system_matrix(problem_size, stencils);
+};
 
-	sparse_solver.compute(A);
+
+std::chrono::duration<double>
+SparseSolver::solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
+	Eigen::SparseLU<Eigen::SparseMatrix<double>> sparse_solver;
+
+	const auto start_time = std::chrono::high_resolution_clock::now();
+	sparse_solver.compute(m_system_matrix);
 	if (sparse_solver.info() != Eigen::Success) {
 		std::cerr << "Decomposition failed" << std::endl;
 
@@ -88,4 +62,37 @@ GeneralStencilSolver::solve_internal(Eigen::VectorXd& x, const Eigen::VectorXd& 
 	}
 
 	x = sparse_solver.solve(rhs);
+	const auto end_time = std::chrono::high_resolution_clock::now();
+
+	return end_time - start_time;
+}
+
+
+void
+SparseSolver::residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const Eigen::VectorXd& rhs) const {
+	r = rhs - m_system_matrix * x;
+}
+
+
+Stencil::Stencil(int npoints) {
+	m_stencils = compute_laplacian_stencils(npoints);
+
+	std::stringstream ss;
+	ss << npoints << "-points";
+
+	m_name = ss.str();
+}
+
+
+std::unique_ptr<Solver>
+Stencil::generate_solver(int problem_size) const {
+	std::unique_ptr<Solver> p = std::make_unique<SparseSolver>(problem_size, m_stencils);
+
+	return p;
+}
+
+
+const std::string&
+Stencil::name() const {
+	return m_name;
 }
