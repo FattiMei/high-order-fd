@@ -11,8 +11,10 @@
 
 class Solver {
 public:
-	virtual std::chrono::duration<double> solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) = 0;
+	virtual void solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) = 0;
 	virtual void residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const Eigen::VectorXd& rhs) const = 0;
+
+	std::chrono::duration<double> solve_profiled(Eigen::VectorXd& x, const Eigen::VectorXd& rhs);
 };
 
 
@@ -20,7 +22,7 @@ class SparseSolver : public Solver {
 public:
 	SparseSolver(int problem_size, const Eigen::MatrixXd& stencils);
 
-	virtual std::chrono::duration<double> solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) override;
+	virtual void solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) override;
 	virtual void residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const Eigen::VectorXd& rhs) const override;
 
 private:
@@ -32,7 +34,7 @@ class TridiagonalSolver : public Solver {
 public:
 	TridiagonalSolver(int problem_size);
 
-	virtual std::chrono::duration<double> solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) override;
+	virtual void solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) override;
 	virtual void residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const Eigen::VectorXd& rhs) const override;
 
 private:

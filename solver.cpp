@@ -4,6 +4,16 @@
 #include "stencil.h"
 
 
+std::chrono::duration<double>
+Solver::solve_profiled(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
+	const auto start_time = std::chrono::high_resolution_clock::now();
+	this->solve(x, rhs);
+	const auto end_time = std::chrono::high_resolution_clock::now();
+
+	return end_time - start_time;
+}
+
+
 static Eigen::SparseMatrix<double> assemble_system_matrix(int n, const Eigen::MatrixXd& stencils) {
 	Eigen::SparseMatrix<double> A(n,n);
 	const int nodes = stencils.cols();
@@ -47,11 +57,10 @@ SparseSolver::SparseSolver(int problem_size, const Eigen::MatrixXd& stencils) {
 };
 
 
-std::chrono::duration<double>
+void
 SparseSolver::solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
 	Eigen::SparseLU<Eigen::SparseMatrix<double>> sparse_solver;
 
-	const auto start_time = std::chrono::high_resolution_clock::now();
 	sparse_solver.compute(m_system_matrix);
 	if (sparse_solver.info() != Eigen::Success) {
 		std::cerr << "Decomposition failed" << std::endl;
@@ -62,9 +71,6 @@ SparseSolver::solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
 	}
 
 	x = sparse_solver.solve(rhs);
-	const auto end_time = std::chrono::high_resolution_clock::now();
-
-	return end_time - start_time;
 }
 
 

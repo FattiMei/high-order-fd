@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
 		for (const Discretization* discr : discretizations) {
 			std::unique_ptr<Solver> solver = discr->generate_solver(n);
 
-			const auto elapsed_time = solver->solve(x, rhs);
+			const auto elapsed_time = solver->solve_profiled(x, rhs);
 			solver->residual(res, x, rhs);
 
 			std::cout
