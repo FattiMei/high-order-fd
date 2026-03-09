@@ -2,10 +2,12 @@
 #include "stencil.h"
 
 
-// this should be controlled by some compilation flags
-// the whole interface is designed so that changing the working precision
-// won't trigger ricompilations elsewhere
+#ifdef USE_EXACT_STENCILS
+#include "rational.h"
+using StencilPrecision = rational<int64_t>;
+#else
 using StencilPrecision = double;
+#endif
 
 
 #define EIGEN_VECTOR(T) Eigen::Matrix<T, Eigen::Dynamic, 1>
@@ -28,7 +30,7 @@ void fill_vandermonde(EIGEN_MATRIX(StencilPrecision)& A,
 	// we exploit the fact that Eigen matrices are stored in col-major
 	// format
 	for (int j = 0; j < n; ++j) {
-		const auto displacement = nodes[j] - center;
+		const auto displacement = nodes[j] + (-center);
 		StencilPrecision acc = 1;
 
 		for (int i = 0; i < n; ++i) {
@@ -80,5 +82,16 @@ Eigen::MatrixXd compute_laplacian_stencils(int n) {
 		stencils.row(i) = A.fullPivLu().solve(b);
 	}
 
-	return stencils;
+	// I can't make the MatrixBase::cast<NewType> work,
+	// so I write this simple implementation
+	//
+	// TODO: understand this better
+	Eigen::MatrixXd result(n,n);
+	for (int j = 0; j < n; ++j) {
+		for (int i = 0; i < n; ++i) {
+			result(i,j) = static_cast<double>(stencils(i,j));
+		}
+	}
+
+	return result;
 }
