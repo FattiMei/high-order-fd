@@ -82,16 +82,5 @@ Eigen::MatrixXd compute_laplacian_stencils(int n) {
 		stencils.row(i) = A.fullPivLu().solve(b);
 	}
 
-	// I can't make the MatrixBase::cast<NewType> work,
-	// so I write this simple implementation
-	//
-	// TODO: understand this better
-	Eigen::MatrixXd result(n,n);
-	for (int j = 0; j < n; ++j) {
-		for (int i = 0; i < n; ++i) {
-			result(i,j) = static_cast<double>(stencils(i,j));
-		}
-	}
-
-	return result;
+	return stencils.cast<double>();
 }
