@@ -33,23 +33,27 @@ Eigen::VectorXd assemble_rhs(const int n) {
 
 
 int main(int argc, char* argv[]) {
-	std::vector<Discretization*> discretizations {
-		new Stencil(3),
-		new Stencil(5),
-		new Stencil(7),
-		new Stencil(9),
-	};
+	int MAX_PROBLEM_SIZE = 20'000;
+	if (argc > 1) {
+		MAX_PROBLEM_SIZE = std::stoi(argv[1]);
+	}
+
+	std::vector<std::unique_ptr<Discretization>> discretizations;
+	discretizations.push_back(std::make_unique<Stencil>(3));
+	discretizations.push_back(std::make_unique<Stencil>(5));
+	discretizations.push_back(std::make_unique<Stencil>(7));
+	discretizations.push_back(std::make_unique<Stencil>(9));
 
 	std::cout << "n,name,errnorm,resnorm,assemble_time,solve_time" << std::endl;
 
-	for (int n = 16; n < 20000; n *= 2) {
+	for (int n = 16; n < MAX_PROBLEM_SIZE; n *= 2) {
 		const Eigen::VectorXd mesh = compute_mesh(n);
 		const Eigen::VectorXd sol  = compute_exact_solution(mesh);
 		const Eigen::VectorXd rhs  = assemble_rhs(n);
 		Eigen::VectorXd res(n);
 		Eigen::VectorXd x(n);
 
-		for (const Discretization* discr : discretizations) {
+		for (const auto& discr : discretizations) {
 			const auto start_time = std::chrono::high_resolution_clock::now();
 			std::unique_ptr<Solver> solver = discr->generate_solver(n);
 			const auto end_time = std::chrono::high_resolution_clock::now();

@@ -6,92 +6,93 @@
 #include <boost/rational.hpp>
 
 
+
 // I need the rational type to provide the conversion
 // operator to floating point types. This must be
 // a **non-static member function**
 template <typename IntType>
 class rational {
 public:
-	rational() : internal_r() {}
-	rational(IntType n) : internal_r(n) {}
-	rational(boost::rational<IntType> &r) : internal_r(r) {}
+	boost::rational<IntType> m_value;
+
+	rational() : m_value() {}
+	rational(IntType n) : m_value(n) {}
+	rational(boost::rational<IntType> &r) : m_value(r) {}
 
 	rational<IntType> operator-() const {
-		auto tmp = internal_r;
+		auto tmp = m_value;
 		tmp = -tmp;
 
 		return rational(tmp);
 	}
 
 	rational<IntType> operator+(const rational<IntType>& r) const {
-		auto tmp = internal_r;
-		tmp += r.internal_r;
+		auto tmp = m_value;
+		tmp += r.m_value;
 
 		return rational(tmp);
 	}
 
 	rational<IntType> operator-(const rational<IntType>& r) const {
-		auto tmp = internal_r;
-		tmp -= r.internal_r;
+		auto tmp = m_value;
+		tmp -= r.m_value;
 
 		return rational(tmp);
 	}
 
 	rational<IntType> operator*(const rational<IntType>& r) const {
-		auto tmp = internal_r;
-		tmp *= r.internal_r;
+		auto tmp = m_value;
+		tmp *= r.m_value;
 
 		return rational(tmp);
 	}
 
 	rational<IntType> operator+=(const rational<IntType>& r) {
-		internal_r += r.internal_r;
+		m_value += r.m_value;
 
 		return *this;
 	}
 
 	rational<IntType> operator-=(const rational<IntType>& r) {
-		internal_r -= r.internal_r;
+		m_value -= r.m_value;
 
 		return *this;
 	}
 
 	rational<IntType> operator*=(const rational<IntType>& r) {
-		internal_r *= r.internal_r;
+		m_value *= r.m_value;
 
 		return *this;
 	}
 
 	rational<IntType> operator/=(const rational<IntType>& r) {
-		internal_r /= r.internal_r;
+		m_value /= r.m_value;
 
 		return *this;
 	}
 
 	bool operator==(const rational<IntType> &r) const {
-		return internal_r == r.internal_r;
+		return m_value == r.m_value;
 	}
 
 	bool operator<(const rational<IntType> &r) const {
-		return internal_r < r.internal_r;
+		return m_value < r.m_value;
 	}
 
 	bool operator>(const rational<IntType> &r) const {
-		return internal_r > r.internal_r;
+		return m_value > r.m_value;
 	}
 
 	template <typename FloatType>
 	operator FloatType() const {
-		return boost::rational_cast<FloatType>(internal_r);
+		return boost::rational_cast<FloatType>(m_value);
 	}
-
-	boost::rational<IntType> internal_r;
 };
 
 
 template <typename IntType>
 rational<IntType> abs(const rational<IntType>& r) {
-	auto tmp = abs(r.internal_r);
+	auto tmp = abs(r.m_value);
 
 	return rational<IntType>(tmp);
 }
