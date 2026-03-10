@@ -14,13 +14,26 @@ Solver::solve_profiled(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
 }
 
 
-static Eigen::SparseMatrix<double> assemble_system_matrix(int n, const Eigen::MatrixXd& stencils) {
+// at the moment we are exploring the possibility of building
+// the compressed sparse matrix directly from the internal data structures.
+//
+// if we understand a little bit better the way stencils are copied
+// into the sparse matrix we could build in place the right data structures.
+// doing so will remove the bulk of the memory transactions
+static Eigen::SparseMatrix<double> assemble_system_matrix(int n, Eigen::MatrixXd stencils) {
 	const int nodes = stencils.cols();
 	const double h = 1.0 / (n - 1.0);
 
-	// reserving a known amount of space of the matrix entries
-	// and following the suggestions of the documentation
-	// allow for great improvements
+	// I'm adding the contribution of the u term in the
+	// operator u'' + u
+	//
+	// I modify the original stencil which is passed by value
+	// in order to remove every call to `A.coeffRef(i,j)` as
+	// it's a O(nnz) operation
+	for (int i = 0; i < nodes; ++i) {
+		stencils(i,i) += h*h;
+	}
+
 	Eigen::SparseMatrix<double> A(n,n);
 	A.reserve(Eigen::VectorXi::Constant(n, nodes));
 
@@ -29,10 +42,6 @@ static Eigen::SparseMatrix<double> assemble_system_matrix(int n, const Eigen::Ma
 	for (int i = 1; i < n-1; ++i) {
 		int centerPos;
 
-		// I don't like this implementation because
-		// it's not very clear.
-		//
-		// I will change it soon
 		if (i < nodes/2) {
 			centerPos = i;
 		}
@@ -46,8 +55,6 @@ static Eigen::SparseMatrix<double> assemble_system_matrix(int n, const Eigen::Ma
 		for (int j = 0; j < nodes; ++j) {
 			A.insert(i, i-centerPos+j) = stencils(centerPos,j);
 		}
-
-		A.coeffRef(i,i) += h*h;
 	}
 
 	A.insert(n-1,n-1) = 1.0;
