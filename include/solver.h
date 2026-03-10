@@ -30,6 +30,11 @@ private:
 };
 
 
+// This solver is proposed only as an example of a specialized, optimized solver and
+// its performance has to be compared with high order finite differences.
+//
+// I'm not particularly interested in writing a tridiagonal solver, so I'll use
+// an external dependency
 class TridiagonalSolver : public Solver {
 public:
 	TridiagonalSolver(int problem_size);
@@ -41,6 +46,11 @@ private:
 };
 
 
+// A solver is constructed for every problem size, so it's impractical to compute
+// problem independent quantities in the solver constructor.
+//
+// The Discretization is a solver factory that remove the redundancies and allow
+// the user to choose which solvers to use without explicitly constructing one
 class Discretization {
 public:
 	virtual std::unique_ptr<Solver> generate_solver(int problem_size) const = 0;

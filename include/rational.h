@@ -10,6 +10,16 @@
 // I need the rational type to provide the conversion
 // operator to floating point types. This must be
 // a **non-static member function**
+//
+// Two options were considered for integrating boost::rational:
+//   1. composition: wrap the boost rational inside a class
+//
+//   2. inheritance: inherit from boost::rational<IntType> and
+//                   add the conversion operators
+//
+// if I got things right, in any case I would have needed to
+// write the arithmetic operators. This needs to be further
+// studied because I'm not sure about that. Anyway I chose (1)
 template <typename IntType>
 class rational {
 public:
@@ -98,16 +108,6 @@ rational<IntType> abs(const rational<IntType>& r) {
 }
 
 
-// Rational numbers are required for doing the stencil computations
-// in exact arithmetic. Rather than implement them by myself, I
-// decided to include the boost dependency.
-//
-// The implementation must provide pure arithmetic operations such that
-// a generic expression `a op b` doesn't mutate any of the variables.
-//
-// The boost::rational type doesn't explicitly provide pure binary operators
-// (+, -, *, /), but only their operator+assignment versions (+=, -=, *=, /=)
-// It seems that the C++ compiler is smart enough to fill the gaps
 namespace Eigen {
 template <typename IntType>
 struct NumTraits<rational<IntType>> : GenericNumTraits<rational<IntType>> {

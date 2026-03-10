@@ -1,5 +1,3 @@
-#include <cassert>
-#include <iostream>
 #include "solver.h"
 #include "stencil.h"
 
@@ -14,24 +12,17 @@ Solver::solve_profiled(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
 }
 
 
-// at the moment we are exploring the possibility of building
-// the compressed sparse matrix directly from the internal data structures.
-//
-// if we understand a little bit better the way stencils are copied
-// into the sparse matrix we could build in place the right data structures.
-// doing so will remove the bulk of the memory transactions
-static Eigen::SparseMatrix<double> assemble_system_matrix(int n, Eigen::MatrixXd stencils) {
-	const int nodes = stencils.cols();
+static Eigen::SparseMatrix<double> assemble_system_matrix(int n, const Eigen::MatrixXd& laplacian_stencils) {
+	const int nodes = laplacian_stencils.cols();
 	const double h = 1.0 / (n - 1.0);
 
-	// I'm adding the contribution of the u term in the
-	// operator u'' + u
+	// the original laplacian stencils are modified to limit the calls to
+	//   SparseMatrix<double>::coeffRef(i,j)
 	//
-	// I modify the original stencil which is passed by value
-	// in order to remove every call to `A.coeffRef(i,j)` as
-	// it's a O(nnz) operation
+	// as it's an expensive operation
+	Eigen::MatrixXd operator_stencils(laplacian_stencils);
 	for (int i = 0; i < nodes; ++i) {
-		stencils(i,i) += h*h;
+		operator_stencils(i,i) += h*h;
 	}
 
 	Eigen::SparseMatrix<double> A(n,n);
@@ -39,6 +30,8 @@ static Eigen::SparseMatrix<double> assemble_system_matrix(int n, Eigen::MatrixXd
 
 	A.insert(0,0) = 1.0;
 
+	// we are trying to assemble the matrix in a column-major format
+	// this is a gateway to directly produce the compressed data structures
 	for (int i = 1; i < n-1; ++i) {
 		int centerPos;
 
@@ -53,7 +46,7 @@ static Eigen::SparseMatrix<double> assemble_system_matrix(int n, Eigen::MatrixXd
 		}
 
 		for (int j = 0; j < nodes; ++j) {
-			A.insert(i, i-centerPos+j) = stencils(centerPos,j);
+			A.insert(i, i-centerPos+j) = operator_stencils(centerPos,j);
 		}
 	}
 
@@ -75,11 +68,7 @@ SparseSolver::solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
 
 	sparse_solver.compute(m_system_matrix);
 	if (sparse_solver.info() != Eigen::Success) {
-		std::cerr << "Decomposition failed" << std::endl;
-
-		// this should crash the program, I'm still deciding
-		// between throwing an exception or calling exit()
-		assert(false);
+		std::runtime_error("LU decomposition failed");
 	}
 
 	x = sparse_solver.solve(rhs);
