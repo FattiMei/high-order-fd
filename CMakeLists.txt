@@ -21,13 +21,16 @@ if (USE_EXACT_STENCILS)
 endif()
 
 
+include_directories(include/)
+
+
 set(STENCIL_LIB stencil)
-add_library(${STENCIL_LIB} stencil.cpp)
+add_library(${STENCIL_LIB} src/stencil.cpp)
 if (USE_EXACT_STENCILS)
 	target_compile_definitions(${STENCIL_LIB} PUBLIC "USE_EXACT_STENCILS")
 endif()
 target_link_libraries(${STENCIL_LIB} Eigen3::Eigen)
 
 
-add_executable(high-order main.cpp solver.cpp)
+add_executable(high-order src/main.cpp src/solver.cpp)
 target_link_libraries(high-order Eigen3::Eigen ${STENCIL_LIB})
