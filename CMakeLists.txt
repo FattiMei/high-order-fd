@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(Eigen3 REQUIRED NO_MODULE)
+find_package(LAPACK REQUIRED)
 
 
 option(USE_EXACT_STENCILS
@@ -36,7 +37,8 @@ set(SOLVER_LIB solver)
 set(SOLVER_DIR src/solvers)
 file(GLOB SOLVER_SRC "${SOLVER_DIR}/*.cpp")
 add_library(${SOLVER_LIB} ${SOLVER_SRC})
-target_link_libraries(${SOLVER_LIB} Eigen3::Eigen)
+target_link_libraries(${SOLVER_LIB} Eigen3::Eigen
+                                    LAPACK::LAPACK -llapacke)
 
 
 add_executable(high-order src/main.cpp

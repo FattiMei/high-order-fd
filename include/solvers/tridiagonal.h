@@ -20,6 +20,9 @@ public:
 	virtual void residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const Eigen::VectorXd& rhs) const override;
 
 private:
+	Eigen::VectorXd m_dl;
+	Eigen::VectorXd m_d ;
+	Eigen::VectorXd m_du;
 };
 
 

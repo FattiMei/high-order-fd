@@ -20,6 +20,7 @@ int main(int argc, char* argv[]) {
 	solver_factories.push_back(std::make_unique<Stencil>(5));
 	solver_factories.push_back(std::make_unique<Stencil>(7));
 	solver_factories.push_back(std::make_unique<Stencil>(9));
+	solver_factories.push_back(std::make_unique<Tridiagonal>());
 
 	std::cout << "n,name,errnorm,resnorm,assemble_time,solve_time" << std::endl;
 
