@@ -66,3 +66,31 @@ I needed to isolate the development of various solvers. By assigning a translati
 
 ## Optimized solvers
 I decided to use the LAPACK tridiagonal solver for the implementation of the *"heavily optimized method[s]"*. This wasn't the focus of the project and I'm assuming `dgtsv` to be a state of the art implementation.
+
+
+# Dependencies and usage
+This project depends on:
+  * Eigen3 (required)
+  * some form of boost for the exact stencils (only if `-DUSE_EXACT_STENCILS:BOOL=ON`)
+  * lapacke
+
+lapacke is tricky because there is no `find_package(LAPACKE)`. For ubuntu like systems, make sure to have the `liblapacke-dev` package installed.
+
+
+```bash
+# classic cmake style build
+git clone https://github.com/FattiMei/high-order-fd
+cd high-order-fd
+mkdir build
+cd build
+
+cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_EXACT_STENCILS:BOOL=ON
+make -j
+
+# the high-order target performs the solver testing
+./high-order | tee out.csv
+python ../analysis.py out.csv
+```
+
+
+the python script produces the work-error plot you see at the top of this page.
