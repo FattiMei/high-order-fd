@@ -1,7 +1,6 @@
 #include <vector>
 #include <iostream>
-#include <Eigen/Core>
-#include "solver.h"
+#include "solvers/sparse.h"
 
 
 Eigen::VectorXd compute_mesh(const int n) {
@@ -38,7 +37,7 @@ int main(int argc, char* argv[]) {
 		MAX_PROBLEM_SIZE = std::stoi(argv[1]);
 	}
 
-	std::vector<std::unique_ptr<Discretization>> discretizations;
+	std::vector<std::unique_ptr<SolverFactory>> discretizations;
 	discretizations.push_back(std::make_unique<Stencil>(3));
 	discretizations.push_back(std::make_unique<Stencil>(5));
 	discretizations.push_back(std::make_unique<Stencil>(7));

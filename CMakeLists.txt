@@ -32,5 +32,5 @@ endif()
 target_link_libraries(${STENCIL_LIB} Eigen3::Eigen)
 
 
-add_executable(high-order src/main.cpp src/solver.cpp)
+add_executable(high-order src/main.cpp src/solvers/sparse.cpp)
 target_link_libraries(high-order Eigen3::Eigen ${STENCIL_LIB})

@@ -1,14 +1,22 @@
-#include "solver.h"
 #include "stencil.h"
+#include "solvers/sparse.h"
 
 
-std::chrono::duration<double>
-Solver::solve_profiled(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
-	const auto start_time = std::chrono::high_resolution_clock::now();
-	this->solve(x, rhs);
-	const auto end_time = std::chrono::high_resolution_clock::now();
+Stencil::Stencil(int npoints) {
+	m_stencils = compute_laplacian_stencils(npoints);
 
-	return end_time - start_time;
+	std::stringstream ss;
+	ss << npoints << "-points";
+
+	m_name = ss.str();
+}
+
+
+std::unique_ptr<Solver>
+Stencil::generate_solver(int problem_size) const {
+	std::unique_ptr<Solver> p = std::make_unique<SparseSolver>(problem_size, m_stencils);
+
+	return p;
 }
 
 
@@ -78,28 +86,4 @@ SparseSolver::solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
 void
 SparseSolver::residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const Eigen::VectorXd& rhs) const {
 	r = rhs - m_system_matrix * x;
-}
-
-
-Stencil::Stencil(int npoints) {
-	m_stencils = compute_laplacian_stencils(npoints);
-
-	std::stringstream ss;
-	ss << npoints << "-points";
-
-	m_name = ss.str();
-}
-
-
-std::unique_ptr<Solver>
-Stencil::generate_solver(int problem_size) const {
-	std::unique_ptr<Solver> p = std::make_unique<SparseSolver>(problem_size, m_stencils);
-
-	return p;
-}
-
-
-const std::string&
-Stencil::name() const {
-	return m_name;
 }
