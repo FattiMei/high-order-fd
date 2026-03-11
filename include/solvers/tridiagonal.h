@@ -7,8 +7,7 @@
 
 class Tridiagonal : public SolverFactory {
 public:
-	Tridiagonal() {};
-
+	Tridiagonal();
 	virtual std::unique_ptr<Solver> generate_solver(int problem_size) const override;
 };
 
