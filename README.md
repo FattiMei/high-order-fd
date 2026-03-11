@@ -1,4 +1,4 @@
-[!plot](./img/work-error.png)
+![plot](./img/work-error.png)
 
 Exploring the work-error balance of difference solvers for a 1D partial differential equation.
 
