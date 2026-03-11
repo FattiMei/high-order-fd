@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
 	solver_factories.push_back(std::make_unique<Stencil>(9));
 	solver_factories.push_back(std::make_unique<Tridiagonal>());
 
-	std::cout << "n,name,errnorm,resnorm,assemble_time,solve_time" << std::endl;
+	std::cout << "n,name,errnorm,resnorm,assemble_time_s,solve_time_s,total_time_s" << std::endl;
 
 	for (int n = 16; n < MAX_PROBLEM_SIZE; n *= 2) {
 		const Eigen::VectorXd mesh = Problem::compute_mesh(n);
@@ -42,6 +42,8 @@ int main(int argc, char* argv[]) {
 			const auto solve_end_time = TIC();
 			const std::chrono::duration<double> solve_time = solve_end_time - solve_start_time;
 
+			const std::chrono::duration<double> total_time = assemble_time + solve_time;
+
 			solver->residual(res, x, rhs);
 
 			std::cout
@@ -53,9 +55,11 @@ int main(int argc, char* argv[]) {
 				<< ','
 				<< res.norm()
 				<< ','
-				<< assemble_time
+				<< assemble_time.count()
 				<< ','
-				<< solve_time
+				<< solve_time.count()
+				<< ','
+				<< total_time.count()
 				<< std::endl;
 		}
 	}
