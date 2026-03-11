@@ -1,34 +1,12 @@
+#include <chrono>
 #include <vector>
 #include <iostream>
+#include "problem.h"
 #include "solvers/sparse.h"
+#include "solvers/tridiagonal.h"
 
 
-Eigen::VectorXd compute_mesh(const int n) {
-	return Eigen::VectorXd::LinSpaced(n, 0.0, 1.0);
-}
-
-
-Eigen::VectorXd compute_exact_solution(const Eigen::VectorXd &mesh) {
-	const int n = mesh.rows();
-	Eigen::VectorXd u(n);
-
-	for (int i = 0; i < mesh.rows(); ++i) {
-		u(i) = std::sin(mesh(i));
-	}
-
-	u = u / std::sin(1);
-
-	return u;
-}
-
-
-Eigen::VectorXd assemble_rhs(const int n) {
-	Eigen::VectorXd b = Eigen::VectorXd::Zero(n);
-	b(0)   = 0.0;
-	b(n-1) = 1.0;
-
-	return b;
-}
+#define TIC() std::chrono::high_resolution_clock::now()
 
 
 int main(int argc, char* argv[]) {
@@ -37,35 +15,38 @@ int main(int argc, char* argv[]) {
 		MAX_PROBLEM_SIZE = std::stoi(argv[1]);
 	}
 
-	std::vector<std::unique_ptr<SolverFactory>> discretizations;
-	discretizations.push_back(std::make_unique<Stencil>(3));
-	discretizations.push_back(std::make_unique<Stencil>(5));
-	discretizations.push_back(std::make_unique<Stencil>(7));
-	discretizations.push_back(std::make_unique<Stencil>(9));
+	std::vector<std::unique_ptr<SolverFactory>> solver_factories;
+	solver_factories.push_back(std::make_unique<Stencil>(3));
+	solver_factories.push_back(std::make_unique<Stencil>(5));
+	solver_factories.push_back(std::make_unique<Stencil>(7));
+	solver_factories.push_back(std::make_unique<Stencil>(9));
 
 	std::cout << "n,name,errnorm,resnorm,assemble_time,solve_time" << std::endl;
 
 	for (int n = 16; n < MAX_PROBLEM_SIZE; n *= 2) {
-		const Eigen::VectorXd mesh = compute_mesh(n);
-		const Eigen::VectorXd sol  = compute_exact_solution(mesh);
-		const Eigen::VectorXd rhs  = assemble_rhs(n);
+		const Eigen::VectorXd mesh = Problem::compute_mesh(n);
+		const Eigen::VectorXd sol  = Problem::compute_exact_solution(mesh);
+		const Eigen::VectorXd rhs  = Problem::assemble_rhs(n);
 		Eigen::VectorXd res(n);
 		Eigen::VectorXd x(n);
 
-		for (const auto& discr : discretizations) {
-			const auto start_time = std::chrono::high_resolution_clock::now();
-			std::unique_ptr<Solver> solver = discr->generate_solver(n);
-			const auto end_time = std::chrono::high_resolution_clock::now();
+		for (const auto& factory : solver_factories) {
+			const auto assemble_start_time = TIC();
+			std::unique_ptr<Solver> solver = factory->generate_solver(n);
+			const auto assemble_end_time = TIC();
+			const std::chrono::duration<double> assemble_time = assemble_end_time - assemble_start_time;
 
-			const std::chrono::duration<double> assemble_time = end_time - start_time;
+			const auto solve_start_time = TIC();
+			solver->solve(x, rhs);
+			const auto solve_end_time = TIC();
+			const std::chrono::duration<double> solve_time = solve_end_time - solve_start_time;
 
-			const auto solve_time = solver->solve_profiled(x, rhs);
 			solver->residual(res, x, rhs);
 
 			std::cout
 				<< n
 				<< ','
-				<< discr->name()
+				<< factory->name()
 				<< ','
 				<< (sol - x).norm()
 				<< ','
