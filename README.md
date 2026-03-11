@@ -1,20 +1,26 @@
+[!plot](./img/work-error.png)
+
+Exploring the work-error balance of difference solvers for a 1D partial differential equation.
+
+
+# Motivation
+As a student in high performance computing, I'm training to produce optimized codes for numerical methods. Here are some details at the implementation level:
+  * optimizing cache usage
+  * using vectorized instructions
+  * removing redundant work or data movement
+
+however, not much attention is put on why that numerical method or algorithm is chosen in the first place. The most plausible explanation is that we restrict the domain of exploration down to a single method because of limitations in time and skill, but we can't forget that the ultimate goal of our craft is exploring the **work-error** balance of solving procedures.
+
+This small demo shows that one can get to a better solution (in the work-error sense) by using sophisticated methods, rather than heavily optimized naive methods. The takeaway here is that every method has its own strengths and weaknesses and that the optimal choice is problem dependent.
+
+
 # High order finite differences
 The finite difference method is a simple but powerful technique for solving regular PDE problems. It shines when:
   * the domain is an hypercube
   * the mesh is equispaced
   * the solution is regular
 
-its simplicity makes it ideal as the first method presented in numerical analysis courses for PDEs, but there are some niches in the industry where finite differences provide great performance.
-
-
-## Motivation for the study
-My focus is in high performance computing, so I'm no stranger in taking a numerical code and manipulate it to expose parallelism, vectorization or redundant work. Sometimes I feel that engineering effort is spent on optimizing a particular solver and not on searching for better solution methods. This is in part due to limited understanding of the problem domain and the space of numerical methods.
-
-Solving a PDE with finite differences allow me to explore the optimality of multiple solvers in terms of:
-  * convergence speed
-  * robustness to numerical errors
-  * cognitive load of implementation
-even before performing some specific optimization tricks.
+in general, 3-point formulae should be more robust to numerical errors but should be slower to converge than higher-order formulae (i.e a 9-point stencil)
 
 
 ## Target problem
@@ -27,7 +33,7 @@ for which $\frac{sin(x)}{sin(1)}$ is the exact solution.
 
 
 # Technical details
-The stencils are obtained by solving a particular Vandermonde system, this is somewhat unconventional as finite difference stencils are obtained with [Fornberg algorithm](https://www.colorado.edu/amath/sites/default/files/attached-files/mathcomp_88_fd_formulas.pdf). Nevertheless the calculations are to be made in exact arithmetic as we want the stencils to be accurate as possible as the Vandermonde matrix is ill-conditioned. Since the coefficients are integer, rational arithmetic is exact.
+The stencils that discretize the operator are obtained by solving a particular Vandermonde system, this is somewhat unconventional as finite difference stencils are obtained with [Fornberg algorithm](https://www.colorado.edu/amath/sites/default/files/attached-files/mathcomp_88_fd_formulas.pdf). Nevertheless the calculations are to be made in exact arithmetic as we want the stencils to be accurate as possible as the Vandermonde matrix is ill-conditioned. Since the coefficients are integer, rational arithmetic is exact.
 
 
 ## A good rational type
@@ -38,3 +44,25 @@ Rational arithmetic is built on integer arithmetic, which could overflow. It's p
   * provide an integer type that can signal overflow
 
 those are not easy features to support and will require pretty heavy dependencies. Since we need a rigorous comparison between solver orders, I'll accept the boost dependency.
+
+
+## Solver zoo
+I needed to gather all the solver implementations under the same interface. This makes the experiment code declarative and it has allowed me to remove redundancies in the solver construction. In my design a solver is constructed for every problem size and stencil-based solvers are constructed with the desired stencil. By using the *factory pattern* I declare a stencil object that computes once the stencil and builds solver objects when required:
+
+```c++
+Stencil solver_factory(5);
+
+for (...) {
+    std::unique_ptr<Solver> solver = solver_factory.generate_solver(problem_size);
+
+    solver->solve(...);
+}
+```
+
+
+## Incremental builds
+I needed to isolate the development of various solvers. By assigning a translation unit for each solver, I limit the amount of code that gets recompiled at every change. This was required because Eigen libraries are slow to compile and I wanted a fast iteration cycle (still ~4 seconds for an optimized full build!)
+
+
+## Optimized solvers
+I decided to use the LAPACK tridiagonal solver for the implementation of the *"heavily optimized method[s]"*. This wasn't the focus of the project and I'm assuming `dgtsv` to be a state of the art implementation.
