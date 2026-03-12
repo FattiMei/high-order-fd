@@ -26,6 +26,9 @@ public:
 
 private:
 	Eigen::SparseMatrix<double> m_system_matrix;
+
+	Eigen::SparseLU<Eigen::SparseMatrix<double>> m_sparse_solver;
+	bool m_has_already_factorized = false;
 };
 
 

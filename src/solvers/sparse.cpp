@@ -72,14 +72,16 @@ SparseSolver::SparseSolver(int problem_size, const Eigen::MatrixXd& stencils) {
 
 void
 SparseSolver::solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
-	Eigen::SparseLU<Eigen::SparseMatrix<double>> sparse_solver;
+	if (not m_has_already_factorized) {
+		m_sparse_solver.compute(m_system_matrix);
+		m_has_already_factorized = true;
 
-	sparse_solver.compute(m_system_matrix);
-	if (sparse_solver.info() != Eigen::Success) {
-		std::runtime_error("LU decomposition failed");
+		if (m_sparse_solver.info() != Eigen::Success) {
+			std::runtime_error("LU decomposition failed");
+		}
 	}
 
-	x = sparse_solver.solve(rhs);
+	x = m_sparse_solver.solve(rhs);
 }
 
 
