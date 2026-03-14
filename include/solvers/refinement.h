@@ -2,14 +2,18 @@
 #define __REFINEMENT_H__
 
 
+#include <utility>
+
+
 template <typename SolverT>
 class RefinementSolver {
 public:
-	RefinementSolver(int problem_size, SolverT&& internal_solver, int maxit, double tol) : m_internal_solver(std::move(internal_solver)),
-	                                                                                       m_maxit(maxit),
-	                                                                                       m_tol(tol),
-	                                                                                       m_correction(problem_size),
-	                                                                                       m_residual(problem_size) {}
+	template <typename... Args>
+	RefinementSolver(int problem_size, int maxit, double tol, Args&&... args) : m_internal_solver(std::forward<Args>(args)...),
+	                                                                            m_maxit(maxit),
+	                                                                            m_tol(tol),
+	                                                                            m_correction(problem_size),
+	                                                                            m_residual(problem_size) {}
 
 	void solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) {
 		m_internal_solver.solve(x, rhs);

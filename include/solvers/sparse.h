@@ -8,7 +8,6 @@
 class SparseSolver {
 public:
 	SparseSolver(int problem_size, const Eigen::MatrixXd& stencils);
-	SparseSolver(SparseSolver&& other) = default;
 
 	void solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs);
 	void residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const Eigen::VectorXd& rhs) const;

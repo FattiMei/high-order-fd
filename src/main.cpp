@@ -67,14 +67,12 @@ int main(int argc, char* argv[]) {
 		// providing the recipe
 		//
 		// the macro code only needs compile time polymorphism
-		RUN_EXPERIMENT(RefinementSolver(n, TridiagonalSolver(n), 10, 0.0), "prova");
-		/*
 		RUN_EXPERIMENT(SparseSolver(n, laplacian_3_point), "3-point");
 		RUN_EXPERIMENT(SparseSolver(n, laplacian_5_point), "5-point");
 		RUN_EXPERIMENT(SparseSolver(n, laplacian_7_point), "7-point");
 		RUN_EXPERIMENT(SparseSolver(n, laplacian_9_point), "9-point");
+
 		RUN_EXPERIMENT(TridiagonalSolver(n), "tridiag");
-		*/
 	}
 
 	return 0;
