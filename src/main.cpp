@@ -1,6 +1,7 @@
 #include <chrono>
 #include <iostream>
 #include "problem.h"
+#include "stencil.h"
 #include "solvers/sparse.h"
 #include "solvers/tridiagonal.h"
 
@@ -8,13 +9,16 @@
 #define TIC() std::chrono::high_resolution_clock::now()
 
 
-
-
 int main(int argc, char* argv[]) {
 	int MAX_PROBLEM_SIZE = 20'000;
 	if (argc > 1) {
 		MAX_PROBLEM_SIZE = std::stoi(argv[1]);
 	}
+
+	const Eigen::MatrixXd laplacian_3_point = compute_laplacian_stencils(3);
+	const Eigen::MatrixXd laplacian_5_point = compute_laplacian_stencils(5);
+	const Eigen::MatrixXd laplacian_7_point = compute_laplacian_stencils(7);
+	const Eigen::MatrixXd laplacian_9_point = compute_laplacian_stencils(9);
 
 	std::cout << "n,name,errnorm,resnorm,assemble_time_s,solve_time_s,total_time_s" << std::endl;
 
@@ -25,7 +29,7 @@ int main(int argc, char* argv[]) {
 		Eigen::VectorXd res(n);
 		Eigen::VectorXd x(n);
 
-		#define PROFILE_SOLVER(solver_recipe) do {                                                           \
+		#define PROFILE_SOLVER(solver_recipe, name) do {                                                     \
 			const auto assemble_start_time = TIC();                                                      \
 			auto solver = solver_recipe;                                                                 \
 			const auto assemble_end_time = TIC();                                                        \
@@ -43,7 +47,7 @@ int main(int argc, char* argv[]) {
 			std::cout                                                                                    \
 				<< n                                                                                 \
 				<< ','                                                                               \
-				<< "solver_recipe"                                                                   \
+				<< name                                                                              \
 				<< ','                                                                               \
 				<< (sol - x).norm()                                                                  \
 				<< ','                                                                               \
@@ -57,7 +61,16 @@ int main(int argc, char* argv[]) {
 				<< std::endl;                                                                        \
 		} while (0)                                                                                          \
 
-		PROFILE_SOLVER(TridiagonalSolver(n));
+		// this macro behaves like a solver factory: it allows me
+		// to control where the solver needs to be constructed by
+		// providing the recipe
+		//
+		// the macro code only needs compile time polymorphism
+		PROFILE_SOLVER(SparseSolver(n, laplacian_3_point), "3-point");
+		PROFILE_SOLVER(SparseSolver(n, laplacian_5_point), "5-point");
+		PROFILE_SOLVER(SparseSolver(n, laplacian_7_point), "7-point");
+		PROFILE_SOLVER(SparseSolver(n, laplacian_9_point), "9-point");
+		PROFILE_SOLVER(TridiagonalSolver(n), "tridiag");
 	}
 
 	return 0;

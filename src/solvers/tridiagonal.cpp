@@ -2,20 +2,6 @@
 #include <lapacke.h>
 
 
-Tridiagonal::Tridiagonal() {
-	m_name = "tridiag";
-}
-
-
-std::unique_ptr<Solver>
-Tridiagonal::generate_solver(int problem_size) const {
-	std::unique_ptr<Solver> p = std::make_unique<TridiagonalSolver>(problem_size);
-
-	return p;
-}
-
-
-
 TridiagonalSolver::TridiagonalSolver(int problem_size) : m_dl(problem_size-1),
                                                          m_d (problem_size),
                                                          m_du(problem_size-1) {

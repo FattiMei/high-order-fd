@@ -2,22 +2,15 @@
 #define __TRIDIAGONAL_H__
 
 
-#include "interface.h"
+#include <Eigen/Core>
 
 
-class Tridiagonal : public SolverFactory {
-public:
-	Tridiagonal();
-	virtual std::unique_ptr<Solver> generate_solver(int problem_size) const override;
-};
-
-
-class TridiagonalSolver : public Solver {
+class TridiagonalSolver {
 public:
 	TridiagonalSolver(int problem_size);
 
-	virtual void solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs) override;
-	virtual void residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const Eigen::VectorXd& rhs) const override;
+	void solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs);
+	void residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const Eigen::VectorXd& rhs) const;
 
 private:
 	Eigen::VectorXd m_dl;

@@ -1,23 +1,4 @@
-#include "stencil.h"
 #include "solvers/sparse.h"
-
-
-Stencil::Stencil(int npoints) {
-	m_stencils = compute_laplacian_stencils(npoints);
-
-	std::stringstream ss;
-	ss << npoints << "-points";
-
-	m_name = ss.str();
-}
-
-
-std::unique_ptr<Solver>
-Stencil::generate_solver(int problem_size) const {
-	std::unique_ptr<Solver> p = std::make_unique<SparseSolver>(problem_size, m_stencils);
-
-	return p;
-}
 
 
 static Eigen::SparseMatrix<double> assemble_system_matrix(int n, const Eigen::MatrixXd& laplacian_stencils) {
