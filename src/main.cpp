@@ -3,6 +3,7 @@
 #include "problem.h"
 #include "stencil.h"
 #include "solvers/sparse.h"
+#include "solvers/refinement.h"
 #include "solvers/tridiagonal.h"
 
 
@@ -29,7 +30,7 @@ int main(int argc, char* argv[]) {
 		Eigen::VectorXd res(n);
 		Eigen::VectorXd x(n);
 
-		#define PROFILE_SOLVER(solver_recipe, name) do {                                                     \
+		#define RUN_EXPERIMENT(solver_recipe, name) do {                                                     \
 			const auto assemble_start_time = TIC();                                                      \
 			auto solver = solver_recipe;                                                                 \
 			const auto assemble_end_time = TIC();                                                        \
@@ -66,11 +67,14 @@ int main(int argc, char* argv[]) {
 		// providing the recipe
 		//
 		// the macro code only needs compile time polymorphism
-		PROFILE_SOLVER(SparseSolver(n, laplacian_3_point), "3-point");
-		PROFILE_SOLVER(SparseSolver(n, laplacian_5_point), "5-point");
-		PROFILE_SOLVER(SparseSolver(n, laplacian_7_point), "7-point");
-		PROFILE_SOLVER(SparseSolver(n, laplacian_9_point), "9-point");
-		PROFILE_SOLVER(TridiagonalSolver(n), "tridiag");
+		RUN_EXPERIMENT(RefinementSolver(n, TridiagonalSolver(n), 10, 0.0), "prova");
+		/*
+		RUN_EXPERIMENT(SparseSolver(n, laplacian_3_point), "3-point");
+		RUN_EXPERIMENT(SparseSolver(n, laplacian_5_point), "5-point");
+		RUN_EXPERIMENT(SparseSolver(n, laplacian_7_point), "7-point");
+		RUN_EXPERIMENT(SparseSolver(n, laplacian_9_point), "9-point");
+		RUN_EXPERIMENT(TridiagonalSolver(n), "tridiag");
+		*/
 	}
 
 	return 0;
