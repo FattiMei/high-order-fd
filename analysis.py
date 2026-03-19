@@ -51,4 +51,19 @@ if __name__ == '__main__':
 
     plt.legend()
 
+    # third a error-residual plot
+    # I want to know how good the residual is at predicting the error
+    plt.figure(3)
+    plt.title("Is residual a good predictor?")
+    plt.xlabel("residual norm")
+    plt.ylabel("error norm")
+    plt.xscale('log')
+    plt.yscale('log')
+    for name, local in df.groupby("name"):
+        err = local['errnorm'].to_numpy()
+        res = local['resnorm'].to_numpy()
+
+        plt.scatter(res, err, label=name)
+    plt.legend()
+
     plt.show()

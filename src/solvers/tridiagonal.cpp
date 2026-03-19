@@ -45,6 +45,6 @@ TridiagonalSolver::residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const 
 	r[n-1] = rhs[n-1] - x[n-1];
 
 	for (int i = 1; i < n-1; ++i) {
-		r[i] = rhs[i] - (x[i-1] - 2.0 * h*h * x[i] - x[i+1]);
+		r[i] = rhs[i] - (x[i-1] + (-2.0 + h*h)*x[i] + x[i+1]);
 	}
 }
