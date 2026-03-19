@@ -1,4 +1,4 @@
-![plot](./img/work-error.png)
+![plot](./img/pi.png)
 
 > are higher order methods more efficient from a work-error perspective?
 
