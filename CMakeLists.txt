@@ -13,7 +13,7 @@ option(USE_EXACT_STENCILS
        OFF)
 
 if (USE_EXACT_STENCILS)
-	find_package(Boost 1.83.0 REQUIRED)
+	find_package(Boost)
 
 	if(NOT Boost_FOUND)
 		message("Could not find Boost, defaulting to inaccurate stencils")

@@ -1,72 +1,37 @@
 ![plot](./img/work-error.png)
 
-Exploring the work-error balance of difference solvers for a 1D partial differential equation.
+> are higher order methods more efficient from a work-error perspective?
 
+## State of things
+When discretizing the 1D differential operators like the laplacian, the 3-point stencil is the first thing that comes to mind. Partly because it serves a didactical purpose when introducing new students to the topic.
 
-# Motivation
-As a student in high performance computing, I'm training to produce optimized codes for numerical methods. Here are some details at the implementation level:
-  * optimizing cache usage
-  * using vectorized instructions
-  * removing redundant work or data movement
+Since it's quite easy to generate high order finite differences, I wonder if paying a little cognitive cost when dealing with a more sophisticated method could yield a better overall performance. This is also a change to do a proper solver comparison using work-error plots.
 
-however, not much attention is put on why that numerical method or algorithm is chosen in the first place. The most plausible explanation is that we restrict the domain of exploration down to a single method because of limitations in time and skill, but we can't forget that the ultimate goal of our craft is exploring the **work-error** balance of solving procedures.
+### Tradeoffs of higher order methods
+  * require regularity in the domain
+  * require regularity in the solution (but still I haven't produced an example in which those methods fail)
+  * more affected by numerical errors
+  * higher cognitive cost, less chances for optimization
 
-This small demo shows that one can get to a better solution (in the work-error sense) by using sophisticated methods, rather than heavily optimized naive methods. The takeaway here is that every method has its own strengths and weaknesses and that the optimal choice is problem dependent.
-
-
-# High order finite differences
-The finite difference method is a simple but powerful technique for solving regular PDE problems. It shines when:
-  * the domain is an hypercube
-  * the mesh is equispaced
-  * the solution is regular
-
-in general, 3-point formulae should be more robust to numerical errors but should be slower to converge than higher-order formulae (i.e a 9-point stencil)
-
-
-## Target problem
-Solve the PDE
+## Experiment description
+I solve this problem
   * $u'' + u = 0$ in $[0,1]$
   * $u(0) = 0$
   * $u(1) = 1$
 
-for which $\frac{sin(x)}{sin(1)}$ is the exact solution.
+for which $\frac{sin(x)}{sin(1)}$ is the exact solution, on increasingly bigger regular meshes. For each problem size, I compare the performance of multiple direct solvers (3-point, 5-point, 7-point, 9-point) by measuring the exact error and the total runtime (assembly time + solve time).
 
+An additional optimized tridiagonal solver (lapacke `dgtsv`) is integrated, this to provide the best known 3-point solver (but there is still room for improvement... stay tuned)
 
-# Technical details
-The stencils that discretize the operator are obtained by solving a particular Vandermonde system, this is somewhat unconventional as finite difference stencils are obtained with [Fornberg algorithm](https://www.colorado.edu/amath/sites/default/files/attached-files/mathcomp_88_fd_formulas.pdf). Nevertheless the calculations are to be made in exact arithmetic as we want the stencils to be accurate as possible as the Vandermonde matrix is ill-conditioned. Since the coefficients are integer, rational arithmetic is exact.
+### Design decisions
+**(exact arithmetic)**: high order stencils are not usually tabulated, so I had to compute them using a method presented in [[finite-differences]]. To have the highest possible accuracy for the coefficients, I had to use exact arithmetic with `boost::rational<IntType>`. This dependency is better than rolling a custom rational number implementation.
 
+**(oop modeling)**: I thought about producing an hierarchy of classes for modeling the solver behavior with the goal of describing the experiments in a declarative fashion. This was later simplified into a macro... All the solvers share the same interface, although this is not explicit, I could probably use C++20 concepts to enforce the interface, but it will provide little value to the project.
 
-## A good rational type
-The stencil calculations are made at runtime, so we will need a library that implements rational arithmetic. This may seem a simple task and one is tempted to roll out a custom rational type library as it's very common on github, but we need a critical feature.
+**(incremental builds)**: the Eigen library is not friendly build times, so I had to break the project into many independent translation units to improve the developer experience.
 
-Rational arithmetic is built on integer arithmetic, which could overflow. It's possible that some calculation could generate overflows even if the result is representable. Some techniques are employed to remove this risk like in the [boost rational implementation](https://www.boost.org/doc/libs/latest/libs/rational/rational.html), but in general it is recommended to:
-  * provide an integer type with unlimited precision, or
-  * provide an integer type that can signal overflow
-
-those are not easy features to support and will require pretty heavy dependencies. Since we need a rigorous comparison between solver orders, I'll accept the boost dependency.
-
-
-## Solver zoo
-I needed to gather all the solver implementations under the same interface. This makes the experiment code declarative and it has allowed me to remove redundancies in the solver construction. In my design a solver is constructed for every problem size and stencil-based solvers are constructed with the desired stencil. By using the *factory pattern* I declare a stencil object that computes once the stencil and builds solver objects when required:
-
-```c++
-Stencil solver_factory(5);
-
-for (...) {
-    std::unique_ptr<Solver> solver = solver_factory.generate_solver(problem_size);
-
-    solver->solve(...);
-}
-```
-
-
-## Incremental builds
-I needed to isolate the development of various solvers. By assigning a translation unit for each solver, I limit the amount of code that gets recompiled at every change. This was required because Eigen libraries are slow to compile and I wanted a fast iteration cycle (still ~4 seconds for an optimized full build!)
-
-
-## Optimized solvers
-I decided to use the LAPACK tridiagonal solver for the implementation of the *"heavily optimized method[s]"*. This wasn't the focus of the project and I'm assuming `dgtsv` to be a state of the art implementation.
-
+## Comments on the results
+The results are in line with the expectations: if high accuracy is required, then high order methods are more efficient than scaling simpler methods. Simple methods have still a place in the engineer toolbox as they are robust and pretty fast for qualitative solutions. Keep in mind that this experiment is extremely limited (real world problems are 3d and irregular), but still we can extract some insights.
 
 # Dependencies and usage
 This project depends on:
@@ -91,6 +56,3 @@ make -j
 ./high-order | tee out.csv
 python ../analysis.py out.csv
 ```
-
-
-the python script produces the work-error plot you see at the top of this page.
