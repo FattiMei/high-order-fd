@@ -48,3 +48,8 @@ TridiagonalSolver::residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const 
 		r[i] = rhs[i] - (x[i-1] + (-2.0 + h*h)*x[i] + x[i+1]);
 	}
 }
+
+
+int TridiagonalSolver::get_nnz() const {
+	return m_dl.size() + m_d.size() + m_du.size();
+}

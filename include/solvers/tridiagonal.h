@@ -11,6 +11,7 @@ public:
 
 	void solve(Eigen::VectorXd& x, const Eigen::VectorXd& rhs);
 	void residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const Eigen::VectorXd& rhs) const;
+	int get_nnz() const;
 
 protected:
 	Eigen::VectorXd m_dl;

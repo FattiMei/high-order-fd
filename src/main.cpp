@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
 	const Eigen::MatrixXd laplacian_7_point = compute_laplacian_stencils(7);
 	const Eigen::MatrixXd laplacian_9_point = compute_laplacian_stencils(9);
 
-	std::cout << "n,name,errnorm,resnorm,assemble_time_s,solve_time_s,total_time_s" << std::endl;
+	std::cout << "n,name,errnorm,resnorm,nnz,assemble_time_s,solve_time_s,total_time_s" << std::endl;
 
 	for (int n = 16; n < MAX_PROBLEM_SIZE; n *= 2) {
 		const Eigen::VectorXd mesh = Problem::compute_mesh(n);
@@ -53,6 +53,8 @@ int main(int argc, char* argv[]) {
 				<< (sol - x).norm()                                                                  \
 				<< ','                                                                               \
 				<< res.norm()                                                                        \
+				<< ','                                                                               \
+				<< solver.get_nnz()                                                                  \
 				<< ','                                                                               \
 				<< assemble_time.count()                                                             \
 				<< ','                                                                               \

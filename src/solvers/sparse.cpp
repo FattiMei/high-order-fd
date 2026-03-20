@@ -70,3 +70,9 @@ void
 SparseSolver::residual(Eigen::VectorXd& r, const Eigen::VectorXd& x, const Eigen::VectorXd& rhs) const {
 	r = rhs - m_system_matrix * x;
 }
+
+
+int
+SparseSolver::get_nnz() const {
+	return m_system_matrix.nonZeros();
+}
