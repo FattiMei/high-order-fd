@@ -56,3 +56,13 @@ make -j
 ./high-order | tee out.csv
 python ../analysis.py out.csv
 ```
+
+# Sparse matrix assembly
+Eigen offers the class `SparseMatrix<T>` to manipulate sparse matrices. Users of Eigen sparse matrices require the matrix to be in *column-major, compressed format*, which is a CSC format. There are many ways of filling a sparse matrix:
+  * starting from a set of triplets (i,j,val)
+  * `coeffRef`
+  * `insert`
+
+out of those, `insert` should be the fastest (not counting the internal methods of `SparseMatrix`, not explicitly documented), but there is another fact to consider. The fastest implementation assumes the entries are inserted according to the column/row-major format. In this case the entries should be inserted for every column by increasing row indices. This is somewhat incovenient because it's easier to assemble by rows. To settle any argument, I produced a phony assembly implementation mimicking the data access pattern of the idealized procedure. Preliminary results shows an important difference, below a plot
+
+![plot](./img/lower-bounds.png)
