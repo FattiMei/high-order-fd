@@ -48,3 +48,6 @@ add_executable(high-order src/main.cpp
 target_link_libraries(high-order Eigen3::Eigen
                                  ${STENCIL_LIB}
                                  ${SOLVER_LIB})
+
+
+add_executable(assembly-bounds src/assembly_bounds.cpp)
