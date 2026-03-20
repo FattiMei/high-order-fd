@@ -20,6 +20,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('analysis',
                                      'data analysis for solver performance')
     parser.add_argument('csv_file', help='which file to study')
+    parser.add_argument('--lower-bounds', type=str, help='csv with the results of assemble time')
     args = parser.parse_args()
 
     csv_filename = args.csv_file
@@ -65,5 +66,20 @@ if __name__ == '__main__':
 
         plt.scatter(res, err, label=name)
     plt.legend()
+
+    if args.lower_bounds is not None:
+        assemble_time = pd.read_csv(args.lower_bounds)
+
+        plt.figure(4)
+        plt.title("Sparse matrix assembly")
+        plt.xlabel('nnz')
+        plt.ylabel('assemble_time_s')
+        plt.xscale('log')
+        plt.yscale('log')
+
+        only_stencils = df[df['name'] != 'tridiag']
+        plt.scatter(only_stencils['nnz'], only_stencils['assemble_time_s'], label='reference')
+        plt.scatter(assemble_time['nnz'], assemble_time['assemble_time_s'], label='lower bound')
+        plt.legend()
 
     plt.show()
