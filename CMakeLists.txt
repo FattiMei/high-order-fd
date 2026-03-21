@@ -23,6 +23,7 @@ endif()
 
 
 include_directories(include/)
+enable_testing()
 
 
 set(STENCIL_LIB stencil)
@@ -53,3 +54,6 @@ target_link_libraries(high-order Eigen3::Eigen
 add_executable(test_matrix_assembly tests/test_matrix_assembly.cpp)
 target_link_libraries(test_matrix_assembly Eigen3::Eigen
                                            ${SOLVER_LIB})
+
+add_test(NAME test_matrix_assembly
+         COMMAND ./test_matrix_assembly)

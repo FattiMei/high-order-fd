@@ -1,27 +1,34 @@
 #include "solvers/sparse.h"
+#include <iostream>
+
+
+using Mat = Eigen::MatrixXd;
+using SpMat = Eigen::SparseMatrix<double>;
+
+
+Mat
+generate_test_stencil(int stencil_size) {
+	Mat res(stencil_size, stencil_size);
+
+	for (int i = 0; i < stencil_size; ++i) {
+		for (int j = 0; j < stencil_size; ++j) {
+			res(i,j) = i;
+		}
+	}
+
+	return res;
+}
+
 
 
 int main(int argc, char* argv[]) {
-	using Mat = Eigen::MatrixXd;
-	using SpMat = Eigen::SparseMatrix<double>;
+	constexpr int n = 16;
 
-	int MAX_PROBLEM_SIZE = 20'000;
-	if (argc > 1) {
-		MAX_PROBLEM_SIZE = std::stoi(argv[1]);
-	}
+	for (int m = 3; m < 10; ++m) {
+		const Mat stencil = generate_test_stencil(m);
+		SpMat matrix = assemble_system_matrix(n, stencil);
 
-	for (int n = 16; n < MAX_PROBLEM_SIZE; n *= 2) {
-		for (int m = 3; m < 10; ++m) {
-			const Mat stencil = Eigen::MatrixXd::Random(m,m);
-
-			const SpMat reference = assemble_system_matrix_reference(n, stencil);
-			const SpMat alternative = assemble_system_matrix_optimized(n, stencil);
-
-			const SpMat diff = reference - alternative;
-			if (diff.norm() > 0.0) {
-				return 1;
-			}
-		}
+		std::cout << matrix << std::endl;
 	}
 
 	return 0;
