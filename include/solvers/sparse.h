@@ -22,4 +22,8 @@ protected:
 };
 
 
+Eigen::SparseMatrix<double> assemble_system_matrix_reference(int n, const Eigen::MatrixXd&);
+Eigen::SparseMatrix<double> assemble_system_matrix_optimized(int n, const Eigen::MatrixXd&);
+
+
 #endif // __SPARSE_H__

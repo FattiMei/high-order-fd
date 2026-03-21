@@ -50,4 +50,6 @@ target_link_libraries(high-order Eigen3::Eigen
                                  ${SOLVER_LIB})
 
 
-add_executable(assembly-bounds src/assembly_bounds.cpp)
+add_executable(test_matrix_assembly tests/test_matrix_assembly.cpp)
+target_link_libraries(test_matrix_assembly Eigen3::Eigen
+                                           ${SOLVER_LIB})
