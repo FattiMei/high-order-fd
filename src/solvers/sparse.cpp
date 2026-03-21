@@ -2,22 +2,8 @@
 #include <cassert>
 
 
-static Eigen::SparseMatrix<double> assemble_system_matrix(int n, const Eigen::MatrixXd& laplacian_stencils) {
-	assert(laplacian_stencils.rows() == laplacian_stencils.cols());
-	assert(n > laplacian_stencils.cols());
-
-	const int m = laplacian_stencils.cols();
-
-	const double h = 1.0 / (n - 1.0);
-
-	// the original laplacian stencils are modified to limit the calls to
-	//   SparseMatrix<double>::coeffRef(i,j)
-	//
-	// as it's an expensive operation
-	Eigen::MatrixXd operator_stencils(laplacian_stencils);
-	for (int i = 0; i < m; ++i) {
-		operator_stencils(i,i) += h*h;
-	}
+static Eigen::SparseMatrix<double> assemble_system_matrix(int n, const Eigen::MatrixXd& operator_stencils) {
+	const int m = operator_stencils.rows();
 
 	Eigen::SparseMatrix<double> A(n,n);
 	A.reserve(Eigen::VectorXi::Constant(n, m));
@@ -60,8 +46,18 @@ static Eigen::SparseMatrix<double> assemble_system_matrix(int n, const Eigen::Ma
 }
 
 
-SparseSolver::SparseSolver(int problem_size, const Eigen::MatrixXd& stencils) {
-	m_system_matrix = assemble_system_matrix(problem_size, stencils);
+SparseSolver::SparseSolver(int problem_size, const Eigen::MatrixXd& laplacian_stencils) {
+	assert(laplacian_stencils.rows() == laplacian_stencils.cols());
+	assert(problem_size > laplacian_stencils.cols());
+
+	const double h = 1.0 / (problem_size-1);
+
+	Eigen::MatrixXd operator_stencils(laplacian_stencils);
+	for (int i = 0; i < laplacian_stencils.rows(); ++i) {
+		operator_stencils(i,i) += h*h;
+	}
+
+	m_system_matrix = assemble_system_matrix(problem_size, operator_stencils);
 };
 
 
