@@ -16,32 +16,9 @@ def find_monotonic_prefix(seq):
     return n
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser('analysis',
-                                     'data analysis for solver performance')
-    parser.add_argument('csv_file', help='which file to study')
-    parser.add_argument('--lower-bounds', type=str, help='csv with the results of assemble time')
-    args = parser.parse_args()
-
-    csv_filename = args.csv_file
-    df = pd.read_csv(csv_filename)
-
-
-    # first a convergence study
-    plt.figure(1)
-    plt.title("Convergence study")
-    plt.xlabel("dofs")
-    plt.ylabel("err")
-    for name, local in df.groupby('name'):
-        plt.loglog(local['n'], local['errnorm'], label=name)
-
-    plt.legend()
-
-
-    # second the work-error plots
-    plt.figure(2)
+def plot_work_error(df):
     plt.title("Performance comparison")
-    plt.xlabel("err")
+    plt.xlabel("error")
     plt.ylabel("total time [s]")
     for name, local in df.groupby('name'):
         err = local['errnorm'].to_numpy()
@@ -52,34 +29,62 @@ if __name__ == '__main__':
 
     plt.legend()
 
-    # third a error-residual plot
-    # I want to know how good the residual is at predicting the error
-    plt.figure(3)
-    plt.title("Is residual a good predictor?")
-    plt.xlabel("residual norm")
-    plt.ylabel("error norm")
-    plt.xscale('log')
-    plt.yscale('log')
-    for name, local in df.groupby("name"):
-        err = local['errnorm'].to_numpy()
-        res = local['resnorm'].to_numpy()
 
-        plt.scatter(res, err, label=name)
+def plot_convergence(df):
+    plt.title("Convergence study")
+    plt.xlabel("dofs")
+    plt.ylabel("error")
+    for name, local in df.groupby('name'):
+        plt.loglog(local['n'], local['errnorm'], label=name)
+
     plt.legend()
 
-    if args.lower_bounds is not None:
-        assemble_time = pd.read_csv(args.lower_bounds)
 
-        plt.figure(4)
-        plt.title("Sparse matrix assembly")
-        plt.xlabel('nnz')
-        plt.ylabel('assemble_time_s')
-        plt.xscale('log')
-        plt.yscale('log')
+def plot_assembly_time(df):
+    plt.title("Sparse matrix assembly")
+    plt.xlabel("nnz")
+    plt.ylabel("assembly time [s]")
+    plt.xscale("log")
+    plt.yscale("log")
 
-        only_stencils = df[df['name'] != 'tridiag']
-        plt.scatter(only_stencils['nnz'], only_stencils['assemble_time_s'], label='reference')
-        plt.scatter(assemble_time['nnz'], assemble_time['assemble_time_s'], label='lower bound')
-        plt.legend()
+    plt.scatter(df['nnz'], df['assembly_time_s'], label="SOTA")
+    plt.scatter(df['nnz'], df['lower_bound_s'], label="lower bound")
+    plt.legend()
 
-    plt.show()
+
+ANALYSIS_MAP = {
+    'work-error': plot_work_error,
+    'convergence': plot_convergence,
+    'assembly': plot_assembly_time
+}
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser('analysis',
+                                     'data analysis for solver performance')
+    parser.add_argument('csv_file', help='which file to study')
+    parser.add_argument('--analysis-type',
+                        type=str,
+                        help='which analysis to perform on the data',
+                        nargs='+',
+                        default=[])
+
+    args = parser.parse_args()
+
+    csv_filename = args.csv_file
+    df = pd.read_csv(csv_filename)
+
+    needs_plot = False
+
+    for request in args.analysis_type:
+        if request in ANALYSIS_MAP:
+            needs_plot = True
+
+            plt.figure()
+            ANALYSIS_MAP[request](df)
+
+    if needs_plot:
+        plt.show()
+    else:
+        print("No compatible analysis was found")
+        print(f"Available are: {ANALYSIS_MAP.keys()}")

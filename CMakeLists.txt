@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(Eigen3 REQUIRED NO_MODULE)
 find_package(LAPACK REQUIRED)
+find_package(Python3)
 
 
 option(USE_EXACT_STENCILS
@@ -52,3 +53,10 @@ add_test(NAME test_matrix_assembly COMMAND ./test_matrix_assembly)
 
 add_executable(bench_matrix_assembly tests/bench_matrix_assembly.cpp)
 target_link_libraries(bench_matrix_assembly Eigen3::Eigen ${SOLVER_LIB})
+
+
+add_custom_target(
+	"bench_assembly"
+	DEPENDS bench_matrix_assembly
+	COMMAND bench_matrix_assembly 100000 > assembly.csv && ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/analysis.py assembly.csv --analysis-type assembly
+)
