@@ -42,8 +42,21 @@ add_library(${SOLVER_LIB} ${SOLVER_SRC})
 target_link_libraries(${SOLVER_LIB} Eigen3::Eigen LAPACK::LAPACK -llapacke)
 
 
-add_executable(high-order src/main.cpp src/problem.cpp)
-target_link_libraries(high-order Eigen3::Eigen ${STENCIL_LIB} ${SOLVER_LIB})
+set(HIGH_ORDER_EXE high-order)
+set(WORK_ERROR_RESULTS "work_error.csv")
+add_executable(${HIGH_ORDER_EXE} src/main.cpp src/problem.cpp)
+target_link_libraries(${HIGH_ORDER_EXE} Eigen3::Eigen ${STENCIL_LIB} ${SOLVER_LIB})
+
+add_custom_command(
+	OUTPUT ${WORK_ERROR_RESULTS}
+	COMMAND ${HIGH_ORDER_EXE} > ${WORK_ERROR_RESULTS}
+	DEPENDS ${HIGH_ORDER_EXE}
+)
+
+add_custom_target(work
+	COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/analysis.py ${WORK_ERROR_RESULTS} --analysis-type work-error
+	DEPENDS ${WORK_ERROR_RESULTS}
+)
 
 
 add_executable(test_matrix_assembly tests/test_matrix_assembly.cpp)
