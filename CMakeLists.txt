@@ -51,12 +51,18 @@ target_link_libraries(test_matrix_assembly Eigen3::Eigen ${SOLVER_LIB})
 add_test(NAME test_matrix_assembly COMMAND ./test_matrix_assembly)
 
 
-add_executable(bench_matrix_assembly tests/bench_matrix_assembly.cpp)
-target_link_libraries(bench_matrix_assembly Eigen3::Eigen ${SOLVER_LIB})
+set(BENCH_ASSEMBLY_EXE bench_matrix_assembly)
+set(BENCH_ASSEMBLY_RESULTS "bench_matrix.csv")
+add_executable(${BENCH_ASSEMBLY_EXE} tests/bench_matrix_assembly.cpp)
+target_link_libraries(${BENCH_ASSEMBLY_EXE} Eigen3::Eigen ${SOLVER_LIB})
 
+add_custom_command(
+	OUTPUT ${BENCH_ASSEMBLY_RESULTS}
+	COMMAND ${BENCH_ASSEMBLY_EXE} > ${BENCH_ASSEMBLY_RESULTS}
+	DEPENDS ${BENCH_ASSEMBLY_EXE}
+)
 
-add_custom_target(
-	"bench_assembly"
-	DEPENDS bench_matrix_assembly
-	COMMAND bench_matrix_assembly 100000 > assembly.csv && ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/analysis.py assembly.csv --analysis-type assembly
+add_custom_target(bench
+	COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/analysis.py ${BENCH_ASSEMBLY_RESULTS} --analysis-type assembly
+	DEPENDS ${BENCH_ASSEMBLY_RESULTS}
 )
