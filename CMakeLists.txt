@@ -38,22 +38,17 @@ set(SOLVER_LIB solver)
 set(SOLVER_DIR src/solvers)
 file(GLOB SOLVER_SRC "${SOLVER_DIR}/*.cpp")
 add_library(${SOLVER_LIB} ${SOLVER_SRC})
-target_link_libraries(${SOLVER_LIB} Eigen3::Eigen
-                                    LAPACK::LAPACK -llapacke)
+target_link_libraries(${SOLVER_LIB} Eigen3::Eigen LAPACK::LAPACK -llapacke)
 
 
-add_executable(high-order src/main.cpp
-                          src/problem.cpp)
-
-
-target_link_libraries(high-order Eigen3::Eigen
-                                 ${STENCIL_LIB}
-                                 ${SOLVER_LIB})
+add_executable(high-order src/main.cpp src/problem.cpp)
+target_link_libraries(high-order Eigen3::Eigen ${STENCIL_LIB} ${SOLVER_LIB})
 
 
 add_executable(test_matrix_assembly tests/test_matrix_assembly.cpp)
-target_link_libraries(test_matrix_assembly Eigen3::Eigen
-                                           ${SOLVER_LIB})
+target_link_libraries(test_matrix_assembly Eigen3::Eigen ${SOLVER_LIB})
+add_test(NAME test_matrix_assembly COMMAND ./test_matrix_assembly)
 
-add_test(NAME test_matrix_assembly
-         COMMAND ./test_matrix_assembly)
+
+add_executable(bench_matrix_assembly tests/bench_matrix_assembly.cpp)
+target_link_libraries(bench_matrix_assembly Eigen3::Eigen ${SOLVER_LIB})
