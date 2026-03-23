@@ -27,7 +27,8 @@ generate_test_stencil(int stencil_size) {
 
 class CompressedSparseMatrix {
 public:
-	CompressedSparseMatrix(int problem_size, int stencil_size) : nnz(1 + (problem_size-2)*stencil_size + 1) {
+	CompressedSparseMatrix(int problem_size, int stencil_size) : nnz(1 + (problem_size-2)*stencil_size + 1),
+	                                                             m_problem_size(problem_size) {
 		m_data = (double*) malloc(nnz * sizeof(double));
 		m_innerIndices = (int*) malloc(nnz * sizeof(int));
 		m_outerStarts = (int*) malloc((problem_size+1)* sizeof(int));
@@ -59,6 +60,10 @@ public:
 		return nnz;
 	}
 
+	long bytes_written() const {
+		return nnz * sizeof(double) + nnz * sizeof(int) + (m_problem_size+1) * sizeof(int);
+	}
+
 	~CompressedSparseMatrix() {
 		free(m_data);
 		free(m_outerStarts);
@@ -67,6 +72,7 @@ public:
 
 private:
 	const int nnz;
+	const int m_problem_size;
 	double* m_data;
 	int* m_outerStarts;
 	int* m_innerIndices;
@@ -79,7 +85,7 @@ int main(int argc, char* argv[]) {
 		MAX_PROBLEM_SIZE = std::stoi(argv[1]);
 	}
 
-	std::cout << "n,nnz,assembly_time_s,lower_bound_s" << std::endl;
+	std::cout << "n,stencil_size,nnz,assembly_time_s,lower_bound_s,bytes_written" << std::endl;
 
 	for (int n = 16; n < MAX_PROBLEM_SIZE; n *= 2) {
 		for (int stencil_size = 3; stencil_size <= 9; ++stencil_size) {
@@ -98,11 +104,15 @@ int main(int argc, char* argv[]) {
 
 			std::cout << n
 			          << ','
+			          << stencil_size
+			          << ','
 			          << A.nonZeros()
 			          << ','
 			          << assembly_time.count()
 			          << ','
 			          << lower_bound.count()
+			          << ','
+			          << phony.bytes_written()
 			          << std::endl;
 		}
 	}
