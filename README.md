@@ -1,4 +1,4 @@
-![plot](./img/pi.png)
+![plot](./img/pi_pareto.png)
 
 > are higher order methods more efficient from a work-error perspective?
 
@@ -66,3 +66,9 @@ Eigen offers the class `SparseMatrix<T>` to manipulate sparse matrices. Users of
 out of those, `insert` should be the fastest (not counting the internal methods of `SparseMatrix`, not explicitly documented), but there is another fact to consider. The fastest implementation assumes the entries are inserted according to the column/row-major format. In this case the entries should be inserted for every column by increasing row indices. This is somewhat incovenient because it's easier to assemble by rows. To settle any argument, I produced a phony assembly implementation mimicking the data access pattern of the idealized procedure. Preliminary results shows an important difference, below a plot
 
 ![plot](./img/lower-bounds.png)
+
+On an 13th Gen Intel(R) Core(TM) i5-1334U (12) @ 4.60 GHz
+![plot](./img/hp_store_throughput.png)
+
+On a rk3566 (4) @ 1.80 GHz
+![plot](./img/radxa_store_throughput.png)
