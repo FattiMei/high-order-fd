@@ -29,11 +29,16 @@ class CompressedSparseMatrix {
 public:
 	CompressedSparseMatrix(int problem_size, int stencil_size) : nnz(1 + (problem_size-2)*stencil_size + 1),
 	                                                             m_problem_size(problem_size) {
+
+		const auto allocation_start_time = TIC();
 		m_data = (double*) malloc(nnz * sizeof(double));
 		m_innerIndices = (int*) malloc(nnz * sizeof(int));
 		m_outerStarts = (int*) malloc((problem_size+1)* sizeof(int));
+		const auto allocation_stop_time = TIC();
+		m_allocation_time = allocation_stop_time - allocation_start_time;
 
 		// assemble the matrix along rows
+		const auto fill_start_time = TIC();
 		int write_idx = 0;
 		for (int row = 0; row < problem_size; ++row) {
 			m_outerStarts[row] = write_idx;
@@ -54,6 +59,8 @@ public:
 		}
 
 		m_outerStarts[problem_size] = write_idx;
+		const auto fill_end_time = TIC();
+		m_fill_time = fill_end_time - fill_start_time;
 	}
 
 	int get_nnz() const {
@@ -62,6 +69,14 @@ public:
 
 	long bytes_written() const {
 		return nnz * sizeof(double) + nnz * sizeof(int) + (m_problem_size+1) * sizeof(int);
+	}
+
+	std::chrono::duration<double> get_allocation_time() const {
+		return m_allocation_time;
+	}
+
+	std::chrono::duration<double> get_fill_time() const {
+		return m_fill_time;
 	}
 
 	~CompressedSparseMatrix() {
@@ -76,6 +91,9 @@ private:
 	double* m_data;
 	int* m_outerStarts;
 	int* m_innerIndices;
+
+	std::chrono::duration<double> m_allocation_time;
+	std::chrono::duration<double> m_fill_time;
 };
 
 
@@ -85,7 +103,7 @@ int main(int argc, char* argv[]) {
 		MAX_PROBLEM_SIZE = std::stoi(argv[1]);
 	}
 
-	std::cout << "n,stencil_size,nnz,assembly_time_s,lower_bound_s,bytes_written" << std::endl;
+	std::cout << "n,stencil_size,nnz,assembly_time_s,lower_bound_s,fill_time_s,bytes_written" << std::endl;
 
 	for (int n = 16; n < MAX_PROBLEM_SIZE; n *= 2) {
 		for (int stencil_size = 3; stencil_size <= 9; ++stencil_size) {
@@ -97,10 +115,8 @@ int main(int argc, char* argv[]) {
 
 			const std::chrono::duration<double> assembly_time = assembly_stop_time - assembly_start_time;
 
-			const auto phony_assembly_start_time = TIC();
 			CompressedSparseMatrix phony(n, stencil_size);
-			const auto phony_assembly_stop_time = TIC();
-			const std::chrono::duration<double> lower_bound = phony_assembly_stop_time - phony_assembly_start_time;
+			const std::chrono::duration<double> best_bound = phony.get_allocation_time() + phony.get_fill_time();
 
 			std::cout << n
 			          << ','
@@ -110,7 +126,9 @@ int main(int argc, char* argv[]) {
 			          << ','
 			          << assembly_time.count()
 			          << ','
-			          << lower_bound.count()
+			          << best_bound.count()
+			          << ','
+			          << phony.get_fill_time().count()
 			          << ','
 			          << phony.bytes_written()
 			          << std::endl;
