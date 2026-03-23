@@ -24,11 +24,11 @@ if __name__ == '__main__':
     plt.xlabel('bytes')
     plt.ylabel('MByte/s')
 
-    mbytes_per_s = assembly_data['bytes_written'] / assembly_data['assembly_time_s'] / (1024.0 * 1024.0)
-    plt.scatter(assembly_data['bytes_written'], mbytes_per_s, label='assembly lower bound')
+    mbytes_per_s = assembly_data['bytes_written'] / assembly_data['lower_bound_s'] / (1024.0 * 1024.0)
+    plt.scatter(assembly_data['bytes_written'], mbytes_per_s, label='assembly lower bound', c='blue')
 
     if not ignore_likwid_data:
-        plt.plot(likwid_data['Size (Byte)'], likwid_data['MByte/s'], label='likwid store bench')
+        plt.plot(likwid_data['Size (Byte)'], likwid_data['MByte/s'], label='minimal assembly', c='red')
 
     plt.legend()
     plt.show()
