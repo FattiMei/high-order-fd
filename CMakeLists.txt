@@ -8,6 +8,9 @@ find_package(Eigen3 REQUIRED NO_MODULE)
 find_package(LAPACK REQUIRED)
 find_package(Python3)
 
+# this is only used to profile the memory throughput of the machine
+find_package(likwid)
+
 
 option(USE_EXACT_STENCILS
        "use exact arithmetic (rational numbers) for computing the stencils"
@@ -53,8 +56,8 @@ add_custom_command(
 	DEPENDS ${HIGH_ORDER_EXE}
 )
 
-add_custom_target(work
-	COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/analysis.py ${WORK_ERROR_RESULTS} --analysis-type work-error
+add_custom_target(pareto
+	COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/pareto.py ${WORK_ERROR_RESULTS}
 	DEPENDS ${WORK_ERROR_RESULTS}
 )
 
@@ -66,6 +69,7 @@ add_test(NAME test_matrix_assembly COMMAND ./test_matrix_assembly)
 
 set(BENCH_ASSEMBLY_EXE bench_matrix_assembly)
 set(BENCH_ASSEMBLY_RESULTS "bench_matrix.csv")
+set(BENCH_MEMORY_THROUGHPUT_RESULTS "bench_throughput.csv")
 add_executable(${BENCH_ASSEMBLY_EXE} tests/bench_matrix_assembly.cpp)
 target_link_libraries(${BENCH_ASSEMBLY_EXE} Eigen3::Eigen ${SOLVER_LIB})
 
@@ -75,7 +79,22 @@ add_custom_command(
 	DEPENDS ${BENCH_ASSEMBLY_EXE}
 )
 
-add_custom_target(bench
-	COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/analysis.py ${BENCH_ASSEMBLY_RESULTS} --analysis-type assembly
+add_custom_target(assembly
+	COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/assembly.py ${BENCH_ASSEMBLY_RESULTS}
 	DEPENDS ${BENCH_ASSEMBLY_RESULTS}
 )
+
+if (likwid_FOUND)
+	# this command can still fail even if likwid is installed
+	add_custom_command(
+		OUTPUT ${BENCH_MEMORY_THROUGHPUT_RESULTS}
+		COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/likwid_store_bench.py > ${BENCH_MEMORY_THROUGHPUT_RESULTS}
+		DEPENDS ${CMAKE_SOURCE_DIR}/tests/likwid_store_bench.py
+	)
+
+	add_custom_target(throughput
+		COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/throughput.py ${BENCH_ASSEMBLY_RESULTS} ${BENCH_MEMORY_THROUGHPUT_RESULTS}
+		DEPENDS ${BENCH_ASSEMBLY_RESULTS}
+		DEPENDS ${BENCH_MEMORY_THROUGHPUT_RESULTS}
+	)
+endif()

@@ -40,22 +40,12 @@ def plot_convergence(df):
     plt.legend()
 
 
-def plot_assembly_time(df):
-    plt.title("Sparse matrix assembly")
-    plt.xlabel("nnz")
-    plt.ylabel("assembly time [s]")
-    plt.xscale("log")
-    plt.yscale("log")
-
-    plt.scatter(df['nnz'], df['assembly_time_s'], label="SOTA")
-    plt.scatter(df['nnz'], df['lower_bound_s'], label="lower bound")
-    plt.legend()
-
 
 ANALYSIS_MAP = {
     'work-error': plot_work_error,
     'convergence': plot_convergence,
-    'assembly': plot_assembly_time
+    'assembly': plot_assembly_time,
+    'throughput': plot_memory_throughput,
 }
 
 

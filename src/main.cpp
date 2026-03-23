@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
 	const Eigen::MatrixXd laplacian_7_point = compute_laplacian_stencils(7);
 	const Eigen::MatrixXd laplacian_9_point = compute_laplacian_stencils(9);
 
-	std::cout << "n,name,errnorm,resnorm,nnz,assemble_time_s,solve_time_s,total_time_s" << std::endl;
+	std::cout << "n,name,errnorm,resnorm,nnz,assembly_time_s,solve_time_s,total_time_s" << std::endl;
 
 	for (int n = 16; n < MAX_PROBLEM_SIZE; n *= 2) {
 		const Eigen::VectorXd mesh = Problem::compute_mesh(n);
@@ -31,17 +31,17 @@ int main(int argc, char* argv[]) {
 		Eigen::VectorXd x(n);
 
 		#define RUN_EXPERIMENT(solver_recipe, name) do {                                                     \
-			const auto assemble_start_time = TIC();                                                      \
+			const auto assembly_start_time = TIC();                                                      \
 			auto solver = solver_recipe;                                                                 \
-			const auto assemble_end_time = TIC();                                                        \
-			const std::chrono::duration<double> assemble_time = assemble_end_time - assemble_start_time; \
+			const auto assembly_end_time = TIC();                                                        \
+			const std::chrono::duration<double> assembly_time = assembly_end_time - assembly_start_time; \
 		                                                                                                     \
 			const auto solve_start_time = TIC();                                                         \
 			solver.solve(x, rhs);                                                                        \
 			const auto solve_end_time = TIC();                                                           \
 			const std::chrono::duration<double> solve_time = solve_end_time - solve_start_time;          \
 		                                                                                                     \
-			const std::chrono::duration<double> total_time = assemble_time + solve_time;                 \
+			const std::chrono::duration<double> total_time = assembly_time + solve_time;                 \
 		                                                                                                     \
 			solver.residual(res, x, rhs);                                                                \
 		                                                                                                     \
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 				<< ','                                                                               \
 				<< solver.get_nnz()                                                                  \
 				<< ','                                                                               \
-				<< assemble_time.count()                                                             \
+				<< assembly_time.count()                                                             \
 				<< ','                                                                               \
 				<< solve_time.count()                                                                \
 				<< ','                                                                               \
