@@ -52,9 +52,8 @@ cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_EXACT_STENCILS:BOOL=ON
 make -j
 
-# the high-order target performs the solver testing
-./high-order | tee out.csv
-python ../analysis.py out.csv
+# the {pareto, assembly, throughput} targets perform tests
+make pareto
 ```
 
 # Sparse matrix assembly
@@ -65,10 +64,13 @@ Eigen offers the class `SparseMatrix<T>` to manipulate sparse matrices. Users of
 
 out of those, `insert` should be the fastest (not counting the internal methods of `SparseMatrix`, not explicitly documented), but there is another fact to consider. The fastest implementation assumes the entries are inserted according to the column/row-major format. In this case the entries should be inserted for every column by increasing row indices. This is somewhat incovenient because it's easier to assemble by rows. To settle any argument, I produced a phony assembly implementation mimicking the data access pattern of the idealized procedure. Preliminary results shows an important difference, below a plot
 
-![plot](./img/lower-bounds.png)
+![plot](./img/hp_matrix_assembly.png)
 
-On an 13th Gen Intel(R) Core(TM) i5-1334U (12) @ 4.60 GHz
+## Lower bounds
+The assembly code (not counting the allocations that must be done in any case) must dump on the memory the matrix data. This is a universal constant. With this experiment I compare the minimal assembly procedure with the results of a store benchmark from the likwid project. Below results in single core from
+  1. 13th Gen Intel(R) Core(TM) i5-1334U (12) @ 4.60 GHz
+  2. ARM A55 rk3566 (4) @ 1.80 GHz
+
 ![plot](./img/hp_store_throughput.png)
 
-On a rk3566 (4) @ 1.80 GHz
 ![plot](./img/radxa_store_throughput.png)
