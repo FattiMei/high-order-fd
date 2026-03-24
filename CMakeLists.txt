@@ -88,8 +88,8 @@ if (likwid_FOUND)
 	# this command can still fail even if likwid is installed
 	add_custom_command(
 		OUTPUT ${BENCH_MEMORY_THROUGHPUT_RESULTS}
-		COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/likwid_store_bench.py > ${BENCH_MEMORY_THROUGHPUT_RESULTS}
-		DEPENDS ${CMAKE_SOURCE_DIR}/tests/likwid_store_bench.py
+		COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/likwid_bench.py store --num_threads 1 > ${BENCH_MEMORY_THROUGHPUT_RESULTS}
+		DEPENDS ${CMAKE_SOURCE_DIR}/tests/likwid_bench.py
 	)
 
 	add_custom_target(throughput
