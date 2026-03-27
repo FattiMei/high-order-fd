@@ -14,9 +14,20 @@ if __name__ == '__main__':
     ignore_likwid_data = False
 
     try:
-        likwid_data = pd.read_csv(sys.argv[2])
+        likwid_data_filename = sys.argv[2]
+        comment_line_count = 0
+
+        with open(likwid_data_filename, 'r') as file:
+            for line in file.readlines():
+                if line.startswith('#'):
+                    comment_line_count += 1
+                else:
+                    break
+
+        likwid_data = pd.read_csv(sys.argv[2], header=comment_line_count)
+
     except:
-        print('Could not compare it with likwid data')
+        print('[WARNING]: could not compare it with likwid data')
         ignore_likwid_data = True
 
     plt.title("Store bandwidth comparison")
