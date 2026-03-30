@@ -1,4 +1,3 @@
-import sys
 import argparse
 import subprocess
 
@@ -52,8 +51,17 @@ if __name__ == '__main__':
         default=2**30
     )
 
+    parser.add_argument(
+        "--output-plot",
+        type=str,
+        help="Produce a matplotlib plot"
+    )
+
     args = parser.parse_args()
 
+    # I'm saving partial results in memory instead of dumping them directly
+    # to stdout so that I can do some local processing like generating plots
+    output_stream = []
     first_experiment = True
     n = 1024
 
@@ -62,20 +70,40 @@ if __name__ == '__main__':
         result = subprocess.run(cmd, capture_output=True)
 
         if result.returncode != 0:
-            # this automatically handles the case where likwid is not present
-            # on the system
-            sys.stderr.write(f"Something when wrong when executing command: {cmd}")
-            sys.stderr.write(result.stderr.decode())
-            exit()
+            # this automatically handles the case where likwid is not present on the system
+            print(f"Something when wrong when executing command: {cmd}")
+            print(result.stderr.decode())
+            exit(1)
 
         csv = parse_bench_output(result.stdout.decode())
 
         if first_experiment:
             first_experiment = False
-            print(f"# results of benchmarking {args.benchmark} on {args.num_threads} thread(s)")
-            print(','.join(csv.keys()))
+            header = f"# results of benchmarking {args.benchmark} on {args.num_threads} thread(s)"
+            output_stream.append(header)
+            output_stream.append(','.join(csv.keys()))
 
-        # I just dump the contents on stdout, so that further
-        # programs can use the contents
-        print(','.join(map(str, csv.values())))
+        output_stream.append(','.join(map(str, csv.values())))
         n = n * 2
+
+    csv_contents = '\n'.join(output_stream)
+    print(csv_contents)
+
+    if args.output_plot is not None:
+        import io
+        import pandas as pd
+        import matplotlib.pyplot as plt
+
+        # pandas.read_csv accepts a filename or a file-like object
+        # I need to create a StringIO from csv_contents
+        df = pd.read_csv(io.StringIO(csv_contents))
+
+        plt.title(header)
+        plt.xscale("log", base=2)
+        plt.xlabel("bytes")
+        plt.ylabel("MFlops/s")
+        plt.plot(df["Size (Byte)"], df["MFlops/s"])
+
+        # this needs also a twin plot for the memory throughput
+
+        plt.savefig(args.output_plot)
