@@ -18,7 +18,8 @@ if __name__ == '__main__':
     plt.xscale("log")
     plt.yscale("log")
 
-    plt.scatter(df['nnz'], df['assembly_time_s'], label="SOTA")
-    plt.scatter(df['nnz'], df['lower_bound_s'], label="lower bound")
+    for name, local_df in df.groupby('assembly_method'):
+        plt.scatter(local_df['nnz'], local_df['assembly_time_s'], label=name)
+
     plt.legend()
     plt.show()

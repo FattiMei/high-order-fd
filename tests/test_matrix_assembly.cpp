@@ -1,4 +1,5 @@
 #include "solvers/sparse.h"
+#include "assembly.h"
 #include <iostream>
 
 
@@ -26,9 +27,19 @@ int main(int argc, char* argv[]) {
 
 	for (int m = 3; m < 10; ++m) {
 		const Mat stencil = generate_test_stencil(m);
-		SpMat matrix = assemble_system_matrix(n, stencil);
 
-		std::cout << matrix << std::endl;
+		SpMat reference = assemble_system_matrix_original(n, stencil);
+		SpMat alternative = assemble_system_matrix<>(n, stencil);
+
+		if ((reference - alternative).norm() != 0) {
+			std::cout << "Something wrong" << std::endl;
+
+			std::cout << "reference" << std::endl << reference << std::endl;
+			std::cout << "alternative" << std::endl << alternative << std::endl;
+			return 1;
+		}
+
+		std::cout << alternative << std::endl;
 	}
 
 	return 0;

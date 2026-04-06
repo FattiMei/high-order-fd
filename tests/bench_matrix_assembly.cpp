@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <iostream>
 #include "solvers/sparse.h"
+#include "assembly.h"
 
 
 #define TIC() std::chrono::high_resolution_clock::now()
@@ -103,35 +104,40 @@ int main(int argc, char* argv[]) {
 		MAX_PROBLEM_SIZE = std::stoi(argv[1]);
 	}
 
-	std::cout << "n,stencil_size,nnz,assembly_time_s,lower_bound_s,fill_time_s,bytes_written" << std::endl;
+	std::cout << "n,stencil_size,nnz,bytes_written,assembly_method,assembly_time_s" << std::endl;
 
 	for (int n = 16; n < MAX_PROBLEM_SIZE; n *= 2) {
 		for (int stencil_size = 3; stencil_size <= 9; ++stencil_size) {
 			const Mat stencil = generate_test_stencil(stencil_size);
+			const long nnz = 2 + (n-2)*stencil_size;
+			const long bytes_written = nnz * sizeof(double) // all the matrix entries to write
+			                         + n * sizeof(int)      // the outerIndices
+			                         + nnz * sizeof(int);   // the innerIndices
 
-			const auto assembly_start_time = TIC();
-			const SpMat A = assemble_system_matrix(n, stencil);
-			const auto assembly_stop_time = TIC();
+			#define RUN_EXPERIMENT(assembly_function, name) do {                                                 \
+				const auto assembly_start_time = TIC();                                                      \
+				auto matrix = assembly_function(n, stencil);                                                 \
+				const auto assembly_end_time = TIC();                                                        \
+				const std::chrono::duration<double> assembly_time = assembly_end_time - assembly_start_time; \
+				                                                                                             \
+				std::cout                                                                                    \
+					<< n                                                                                 \
+					<< ','                                                                               \
+					<< stencil_size                                                                      \
+					<< ','                                                                               \
+					<< nnz                                                                               \
+					<< ','                                                                               \
+					<< bytes_written                                                                     \
+					<< ','                                                                               \
+					<< name                                                                              \
+					<< ','                                                                               \
+					<< assembly_time.count()                                                             \
+					<< std::endl;                                                                        \
+			} while (0)                                                                                          \
 
-			const std::chrono::duration<double> assembly_time = assembly_stop_time - assembly_start_time;
-
-			CompressedSparseMatrix phony(n, stencil_size);
-			const std::chrono::duration<double> best_bound = phony.get_allocation_time() + phony.get_fill_time();
-
-			std::cout << n
-			          << ','
-			          << stencil_size
-			          << ','
-			          << A.nonZeros()
-			          << ','
-			          << assembly_time.count()
-			          << ','
-			          << best_bound.count()
-			          << ','
-			          << phony.get_fill_time().count()
-			          << ','
-			          << phony.bytes_written()
-			          << std::endl;
+			RUN_EXPERIMENT(assemble_system_matrix_original, "insert");
+			RUN_EXPERIMENT(assemble_system_matrix<Eigen::StorageOptions::ColMajor>, "CSR->CSC");
+			RUN_EXPERIMENT(assemble_system_matrix<Eigen::StorageOptions::RowMajor>, "lower bound");
 		}
 	}
 

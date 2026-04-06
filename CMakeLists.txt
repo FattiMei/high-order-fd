@@ -41,7 +41,7 @@ target_link_libraries(${STENCIL_LIB} Eigen3::Eigen)
 set(SOLVER_LIB solver)
 set(SOLVER_DIR src/solvers)
 file(GLOB SOLVER_SRC "${SOLVER_DIR}/*.cpp")
-add_library(${SOLVER_LIB} ${SOLVER_SRC})
+add_library(${SOLVER_LIB} ${SOLVER_SRC} src/assembly.cpp)
 target_link_libraries(${SOLVER_LIB} Eigen3::Eigen LAPACK::LAPACK -llapacke)
 
 
@@ -69,8 +69,6 @@ add_test(NAME test_matrix_assembly COMMAND ./test_matrix_assembly)
 
 set(BENCH_ASSEMBLY_EXE bench_matrix_assembly)
 set(BENCH_ASSEMBLY_RESULTS "bench_assembly.csv")
-set(BENCH_MEMORY_THROUGHPUT_RESULTS "bench_throughput.csv")
-set(BENCH_MEMORY_THROUGHPUT_COMMAND "${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/likwid_bench.py store --num_threads 1")
 add_executable(${BENCH_ASSEMBLY_EXE} tests/bench_matrix_assembly.cpp)
 target_link_libraries(${BENCH_ASSEMBLY_EXE} Eigen3::Eigen ${SOLVER_LIB})
 
@@ -84,19 +82,3 @@ add_custom_target(assembly
 	COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/assembly.py ${BENCH_ASSEMBLY_RESULTS}
 	DEPENDS ${BENCH_ASSEMBLY_RESULTS}
 )
-
-if (likwid_FOUND)
-	# this command can still fail even if likwid is installed, we need to "catch the exception" so the target `throughput` doesn't fail
-	# I use the `||` trick to evaluate `cmd` and a failsafe command in case `cmd` fails
-	add_custom_command(
-		OUTPUT ${BENCH_MEMORY_THROUGHPUT_RESULTS}
-		COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/likwid_bench.py store --num_threads 1 > ${BENCH_MEMORY_THROUGHPUT_RESULTS} || echo > ${BENCH_MEMORY_THROUGHPUT_RESULTS}
-		DEPENDS ${CMAKE_SOURCE_DIR}/tests/likwid_bench.py
-	)
-
-	add_custom_target(throughput
-		COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/throughput.py ${BENCH_ASSEMBLY_RESULTS} ${BENCH_MEMORY_THROUGHPUT_RESULTS}
-		DEPENDS ${BENCH_ASSEMBLY_RESULTS}
-		DEPENDS ${BENCH_MEMORY_THROUGHPUT_RESULTS}
-	)
-endif()
