@@ -19,6 +19,25 @@ assemble_system_matrix_original(int n, const Eigen::MatrixXd& operator_stencils)
 		);
 
 		for (int k = 0; k < m; ++k) {
+			// here there is a dependency between the
+			// for loop iterations as the insert function
+			// updates the write indices
+			//
+			// I don't think the compiler can figure out
+			// that we can remove the dependency. Maybe it
+			// sees the function call and just assume there is
+			// a dependency
+			//
+			// How can we be sure of this? Are there flags or
+			// callbacks? This is yet another example of why
+			// complexity is bad. We can reason about this,
+			// but the compiler cannot
+			//
+			// Also this memory dump could be vectorized, but this
+			// is yet another scheduling problem!!
+			//
+			// And also the memory layout of the stencils could be
+			// another scheduling variable
 			A.insert(i, lb+k) = operator_stencils(i-lb, k);
 		}
 	}

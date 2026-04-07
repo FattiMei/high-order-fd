@@ -17,6 +17,10 @@ public:
 protected:
 	Eigen::SparseMatrix<double> m_system_matrix;
 
+	// the sparse solver only wants a constant matrix in column major
+	// storage. This is huge because now we can use the zero copy
+	// Eigen::Map<SparseMatrix<double>> for building the matrix (and possibly
+	// reaching optimal performance in doing so)
 	Eigen::SparseLU<Eigen::SparseMatrix<double>> m_sparse_solver;
 	bool m_has_already_factorized = false;
 };

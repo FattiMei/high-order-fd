@@ -43,6 +43,8 @@ assemble_system_matrix(int n, const Eigen::MatrixXd& operator_stencils) {
 	trMat.finalize();
 
 	// this is an implicit cast from RowMajor to StorageScheme
+	// I could look at the transpose routine to make the performance
+	// analysis more complete
 	return trMat;
 }
 

@@ -41,7 +41,7 @@ target_link_libraries(${STENCIL_LIB} Eigen3::Eigen)
 set(SOLVER_LIB solver)
 set(SOLVER_DIR src/solvers)
 file(GLOB SOLVER_SRC "${SOLVER_DIR}/*.cpp")
-add_library(${SOLVER_LIB} ${SOLVER_SRC} src/assembly.cpp)
+add_library(${SOLVER_LIB} ${SOLVER_SRC} src/assembly_routines.cpp)
 target_link_libraries(${SOLVER_LIB} Eigen3::Eigen LAPACK::LAPACK -llapacke)
 
 
@@ -68,7 +68,7 @@ add_test(NAME test_matrix_assembly COMMAND ./test_matrix_assembly)
 
 
 set(BENCH_ASSEMBLY_EXE bench_matrix_assembly)
-set(BENCH_ASSEMBLY_RESULTS "bench_assembly.csv")
+set(BENCH_ASSEMBLY_RESULTS "bench_matrix_assembly.csv")
 add_executable(${BENCH_ASSEMBLY_EXE} tests/bench_matrix_assembly.cpp)
 target_link_libraries(${BENCH_ASSEMBLY_EXE} Eigen3::Eigen ${SOLVER_LIB})
 
