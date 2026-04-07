@@ -137,7 +137,9 @@ int main(int argc, char* argv[]) {
 
 			RUN_EXPERIMENT(assemble_system_matrix_original, "insert");
 			RUN_EXPERIMENT(assemble_system_matrix<Eigen::StorageOptions::ColMajor>, "CSR->CSC");
-			RUN_EXPERIMENT(assemble_system_matrix<Eigen::StorageOptions::RowMajor>, "lower bound");
+			RUN_EXPERIMENT(assemble_system_matrix<Eigen::StorageOptions::RowMajor>, "CSR");
+			RUN_EXPERIMENT(assemble_system_matrix_minimal<false>, "best obtainable");
+			RUN_EXPERIMENT((assemble_system_matrix_minimal<false, true>), "dump constants");
 		}
 	}
 
